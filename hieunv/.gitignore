@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .venv/
 .DS_Store
+c_cuda/bench_seq
+c_cuda/bench_cuda
+c_cuda/build_*.txt
