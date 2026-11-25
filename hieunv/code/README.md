@@ -13,6 +13,7 @@
 | `bench_mem.py` | extra checks (PREDICTIONS.md): memory bandwidth with STREAM-like kernels, FC with B vectors, conv split into im2col/GEMM |
 | `make_bandwidth_notebook.py` | builds `../kaggle/hpc_bandwidth_kaggle.ipynb` for `bench_mem.py` (3 runs, about 10 minutes) |
 | `make_c_cuda_notebook.py` | builds `../kaggle/hpc_c_cuda_kaggle.ipynb` for the library-free version in `../c_cuda` (sequential C + hand-written CUDA, 3 runs) |
+| `analyze_c_cuda.py` | tables for the library-free runs (`../results/analysis/c_cuda_tables.md`): conv fit and speedup, matvec exponent and bandwidth, GEMM ladder, GPU cycles and % of FP32 peak |
 
 Every benchmark first checks that its implementations agree (caffe and batched vs conv2d,
 matvec/gemm vs float64), so a wrong kernel is never timed.
