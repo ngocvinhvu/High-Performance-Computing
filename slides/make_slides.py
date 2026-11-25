@@ -334,13 +334,18 @@ def build(template, out):
         P(R("Kiểm chứng bằng cài đặt tự viết trên MPI và CUDA", size=22, bold=True, color=INK, font=TITLE_FONT), after=8),
         P(R("Bài báo: V. Hegde, S. Usmani, Stanford University, 2016", size=16, italic=True, color=MUTED)),
     ], name="Tiêu đề")
-    text(s, 0.45, 4.6, 5.4, 2.1, [
+    text(s, 0.45, 4.45, 5.6, 0.9, [
         P(R("Nhóm 10", size=22, bold=True, color=DARKRED, font=TITLE_FONT), after=2),
-        P(R("IT5408 Tính toán hiệu năng cao · Học kỳ 20261B", size=15, color=INK), after=10),
-        P(R("Vu Ngoc Vinh · Nguyen Van Hieu", size=14, color=INK), after=0),
-        P(R("Tuan Nguyen · Nguyen Duc Thinh", size=14, color=INK), after=0),
-        P(R("Lattana Aphixay", size=14, color=INK)),
+        P(R("IT5408 Tính toán hiệu năng cao · Học kỳ 20261B", size=15, color=INK)),
     ], name="Nhóm")
+    members = [("Vũ Ngọc Vinh", "20262094M"), ("Nguyễn Văn Hiếu", "20262227M"), ("Nguyễn Ngọc Tuấn", "20262434M"),
+               ("Nguyễn Đức Thịnh", "20262442M"), ("Lattana Aphixay", "20262696M"), ("Nguyễn Mạnh Đức", "20262139M")]
+    box(s, 0.4, 5.3, 5.85, 1.2, fill=WHITE, name="Nền danh sách thành viên")
+    for col in range(2):
+        text(s, 0.45 + col * 2.85, 5.4, 2.8, 1.3, [
+            P(R(n + "  ", size=13, color=INK), R(m, size=12, color=MUTED), after=3)
+            for n, m in members[col * 3:col * 3 + 3]
+        ], name=f"Thành viên {col + 1}")
     notes(s, "Giới thiệu đề tài: kiểm chứng bằng số đo các nhận định của bài Parallel and Distributed Deep Learning "
              "(Hegde & Usmani, Stanford 2016). Nhóm cài đặt lại từ đầu bằng C, MPI và CUDA, không dùng cuBLAS, cuDNN, NCCL.")
 

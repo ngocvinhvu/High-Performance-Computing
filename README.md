@@ -51,13 +51,14 @@ pipeline/tensor parallel và các phương pháp tối ưu phân tán đều đ�
 
 ### Thành viên
 
-| Thư mục | Thành viên | Tài khoản | Phần việc |
+| Thành viên | MSSV | Thư mục | Phần việc |
 |---|---|---|---|
-| [`vinhvn/`](vinhvn/) | (điền) | (điền) | Model parallelism: pipeline (GPipe) và tensor parallelism (kiểu Megatron) trên 4× H100, GEMM và all-reduce tự viết |
-| [`hieunv/`](hieunv/) | (điền) | (điền) | Đo lại §3 bằng C tuần tự và CUDA tự viết trên Kaggle T4: conv kiểu Caffe theo batch, matvec theo n, GEMM, băng thông bộ nhớ; bản PyTorch giữ làm mốc tham khảo |
-| [`tuannn/`](tuannn/) | Tuan Nguyen | [tuannt2906](https://github.com/tuannt2906) | CNN tự cài bằng C/MPI/OpenMP/CUDA: Sync SGD, Parallel SGD, ADMM, Downpour, 6 thuật toán allreduce |
-| [`thinhnd/`](thinhnd/) | Nguyen Duc Thinh | [ducthinhh1002](https://github.com/ducthinhh1002) | CNN tự viết bằng C/MPI/CUDA trên RTX 4060: thời gian tới cùng accuracy, ảnh hưởng của gradient trễ |
-| [`ltnaphixay/`](ltnaphixay/) | LATTANA APHIXAY | [infinityrbx](https://github.com/infinityrbx) | SGD song song dữ liệu trên CUDA với allreduce tự viết: 2× T4 (PCIe), 4× A100 (NVLink so với qua host) |
+| Vũ Ngọc Vinh | 20262094M | [`vinhvn/`](vinhvn/) | Model parallelism: pipeline (GPipe) và tensor parallelism (kiểu Megatron) trên 4× H100, GEMM và all-reduce tự viết |
+| Nguyễn Văn Hiếu | 20262227M | [`hieunv/`](hieunv/) | Đo lại §3 bằng C tuần tự và CUDA tự viết trên Kaggle T4: conv kiểu Caffe theo batch, matvec theo n, GEMM, băng thông bộ nhớ; bản PyTorch giữ làm mốc tham khảo |
+| Nguyễn Ngọc Tuấn | 20262434M | [`tuannn/`](tuannn/) | CNN tự cài bằng C/MPI/OpenMP/CUDA: Sync SGD, Parallel SGD, ADMM, Downpour, 6 thuật toán allreduce |
+| Nguyễn Đức Thịnh | 20262442M | [`thinhnd/`](thinhnd/) | CNN tự viết bằng C/MPI/CUDA trên RTX 4060: thời gian tới cùng accuracy, ảnh hưởng của gradient trễ |
+| Lattana Aphixay | 20262696M | [`ltnaphixay/`](ltnaphixay/) | SGD song song dữ liệu trên CUDA với allreduce tự viết: 2× T4 (PCIe), 4× A100 (NVLink so với qua host) |
+| Nguyễn Mạnh Đức | 20262139M | – | (điền) |
 
 ## 3. Biên dịch và chạy
 

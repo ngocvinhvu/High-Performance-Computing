@@ -4,13 +4,14 @@
 **Bài báo tham chiếu:** V. Hegde, S. Usmani, *Parallel and Distributed Deep Learning*, Stanford University, 2016 ([hgpu.org/?p=16046](https://hgpu.org/?p=16046))
 **Repo:** `https://gitlab.nqtuan0192.me/vu/hpc_20261b_group10_paralleldistributeddeeplearning_mpi-cuda`
 
-| Thành viên | Thư mục | Phần việc |
-|---|---|---|
-| Vu Ngoc Vinh | `vinhvn/` | Model parallelism (§2): pipeline và tensor parallelism trên nhiều GPU |
-| Nguyen Van Hieu | `hieunv/` | CPU so với GPU (§3): conv theo batch, ma trận–vector theo n, băng thông bộ nhớ |
-| Tuan Nguyen | `tuannn/` | CNN với Sync SGD, Parallel SGD, ADMM, Downpour (§5); 6 thuật toán allreduce trên MPI |
-| Nguyen Duc Thinh | `thinhnd/` | CNN trên MPI và CUDA: thời gian tới cùng accuracy, ảnh hưởng của gradient trễ (§5.2) |
-| Lattana Aphixay | `ltnaphixay/` | SGD song song dữ liệu trên nhiều GPU với allreduce tự viết; chi phí truyền thông (§5) |
+| Thành viên | MSSV | Thư mục | Phần việc |
+|---|---|---|---|
+| Vũ Ngọc Vinh | 20262094M | `vinhvn/` | Model parallelism (§2): pipeline và tensor parallelism trên nhiều GPU |
+| Nguyễn Văn Hiếu | 20262227M | `hieunv/` | CPU so với GPU (§3): conv theo batch, ma trận–vector theo n, băng thông bộ nhớ |
+| Nguyễn Ngọc Tuấn | 20262434M | `tuannn/` | CNN với Sync SGD, Parallel SGD, ADMM, Downpour (§5); 6 thuật toán allreduce trên MPI |
+| Nguyễn Đức Thịnh | 20262442M | `thinhnd/` | CNN trên MPI và CUDA: thời gian tới cùng accuracy, ảnh hưởng của gradient trễ (§5.2) |
+| Lattana Aphixay | 20262696M | `ltnaphixay/` | SGD song song dữ liệu trên nhiều GPU với allreduce tự viết; chi phí truyền thông (§5) |
+| Nguyễn Mạnh Đức | 20262139M | – | (điền) |
 
 ---
 

@@ -2,6 +2,15 @@
 
 **Repo:** https://gitlab.nqtuan0192.me/vu/hpc_20261b_group10_paralleldistributeddeeplearning_mpi-cuda
 
+| Thành viên | MSSV |
+|---|---|
+| Vũ Ngọc Vinh | 20262094M |
+| Nguyễn Văn Hiếu | 20262227M |
+| Nguyễn Ngọc Tuấn | 20262434M |
+| Nguyễn Đức Thịnh | 20262442M |
+| Lattana Aphixay | 20262696M |
+| Nguyễn Mạnh Đức | 20262139M |
+
 Thành phần theo yêu cầu của đề:
 
 | # | Thành phần | Vị trí |
