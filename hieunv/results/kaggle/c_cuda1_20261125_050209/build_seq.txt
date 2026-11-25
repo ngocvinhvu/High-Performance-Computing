@@ -1,0 +1,2 @@
+gcc -O3 -march=native -std=c11 -ffp-contract=fast -Wall -Wextra -fno-tree-loop-distribute-patterns -o bench_seq bench_seq.c -lm
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0

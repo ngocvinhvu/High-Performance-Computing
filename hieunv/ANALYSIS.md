@@ -3,6 +3,10 @@
 Số liệu: `results/analysis/tables.md` (sinh bởi `code/analyze.py`) từ 3 lần chạy Kaggle và 3 lần chạy laptop; số liệu bài báo đọc từ
 **Hình 1–4 trong PDF**, lưu ở `results/paper_digitized.csv` (cách đọc và sai số ghi trong file). Dùng **trung vị** 3 lần chạy cho speedup theo batch.
 
+**Hai bản đo.** Mục 1–7 phân tích bản **PyTorch** (MKL/oneDNN trên CPU, cuBLAS/cuDNN trên GPU). Bài tập lớn không cho dùng thư viện song
+song có sẵn, nên phép đo chính thức được làm lại bằng **C tuần tự và CUDA tự viết** (`c_cuda/`); phân tích của bản này ở **mục 8**. Bản PyTorch
+được giữ làm mốc tham khảo: thư viện tối ưu đạt được bao nhiêu trên cùng loại máy.
+
 **Đính chính so với README và các báo cáo trước:** trước đây tôi chỉ đọc phần chữ của bài. Nhìn vào hình thì thấy (1) Hình 1 có trục "Time (ms)" nên
 độ dốc **đúng là ms/ảnh** (đọc ra 6,32 so với 6,45 trong phần chữ); (2) bài báo đo batch 16, 32, 64, 128, 256; (3) Hình 3 **có tiêu đề "matrix
 vector multiplication"** nhưng chú thích ghi "matrix-matrix"; ngoài ra số tuyệt đối của FC gợi ý có thể là nhân nhiều vector (mục 3).
@@ -104,6 +108,126 @@ Chỉ dựa trên hình và phần chữ của bài; những điểm này không
   1. Chạy D6 (laptop) và trên máy khác để xem kết luận có lặp lại.
   2. Chạy lại Kaggle ở 2–3 phiên khác nhau để có sai số giữa máy/phiên.
   3. Tách nguyên nhân bên trong GEMM của conv chỉ đạt 26% trần (ma trận nhỏ, đồng bộ từng ảnh...).
+
+## 8. Bản không dùng thư viện: C tuần tự (CPU) và CUDA tự viết (GPU)
+
+Số liệu: `results/analysis/c_cuda_tables.md` (sinh bởi `code/analyze_c_cuda.py`) từ 3 lần chạy trong một phiên Kaggle ngày 25/11/2026
+(`results/kaggle/c_cuda{1,2,3}_20261125_050209`). Kế hoạch, cách đo và 10 dự đoán E1–E10 được **commit trước khi chạy** ([PLAN_C_CUDA.md](PLAN_C_CUDA.md),
+commit `1f3dbac`); cột kết quả điền sau.
+
+**Điều kiện đo:**
+- **Máy:** Tesla T4 và Xeon 2,0 GHz (Skylake-SP, có AVX-512). `lscpu` giống hệt phiên PyTorch ngày 22/11, nhưng không chắc là cùng máy vật lý.
+- **CPU:** C 1 luồng, biên dịch bằng `gcc -O3 -march=native -ffp-contract=fast`, không BLAS, không OpenMP. Chương trình tự kiểm tra và báo đúng 1 luồng.
+- **GPU:** kernel tự viết, biên dịch bằng nvcc 13.0, chỉ dùng CUDA runtime. Mọi kernel được so với float64 trước khi tính giờ.
+- **Số lần tính giờ:** GPU 30 lần mỗi điểm, CPU 10 lần, thứ tự kích thước xáo trộn.
+- Số dưới đây là **trung vị** 3 lần chạy; ngoặc đơn là khoảng của từng lần.
+
+### 8.1. Đối chiếu kết luận của bài báo, bản C/CUDA
+
+| # | Kết luận của bài báo | Bản C/CUDA | So với bản PyTorch (mục 1) |
+|---|---|---|---|
+| 1 | Conv của CPU tuyến tính theo batch | R² ≥ 0,999 (batch 16–256, cả 3 lần). **Lặp lại được** | Như nhau |
+| 2 | Conv của GPU tuyến tính theo batch | R² ≥ 0,9998 (kiểu Caffe); batched ≥ 0,998. **Lặp lại được** | Như nhau |
+| 3 | GPU nhanh hơn CPU khoảng 40 lần (conv) | **23,3×** (22,3–23,3) | Thấp hơn 27,8× của PyTorch |
+| 4 | Batch lớn hơn cho speedup cao hơn | 18,6× (batch 1) → 22,7× (32) → 23,1× (256); từ 16 đến 256 tăng 5,5% (bài báo 10%). **Một phần** | Cùng dạng: tăng đến batch khoảng 32 rồi phẳng |
+| 5 | FC tăng theo O(n²) | CPU: k = 2,11 (n ≥ 4096), 2,26 (n ≥ 1024). GPU: 1,86 và 1,79 | Như nhau: CPU đúng, GPU chỉ xấp xỉ |
+| 6 | FC: GPU nhanh hơn khoảng 40 lần | 18,2× (n = 4096), 20,2× (8192), 23,1× (16384) | Gần như nhau (PyTorch 18,3 / 20,3 / 21,7) |
+| 7 | Ma trận lớn hơn cho speedup FC cao hơn | 1,6× (n = 256) → 23,1× (16384), tăng đều, phẳng từ n = 12288 | Khác ở n nhỏ: GPU tự viết đã nhanh hơn CPU từ n = 256 (PyTorch: 0,43×), nhiều khả năng vì chỉ một lần launch, ít chi phí cố định hơn (chưa đo tách) |
+
+Kết luận chính về xu hướng **không đổi** khi bỏ thư viện: conv tuyến tính theo batch, speedup tăng rồi phẳng, matvec bị giới hạn bởi bộ nhớ.
+Con số "bao nhiêu lần" vẫn khác 40× của bài và còn phụ thuộc vào cách cài đặt (mục 8.2).
+
+### 8.2. Convolution
+
+**Vì sao tỷ lệ là 23,3× chứ không phải 27,8× như bản PyTorch?** Bản C kiểu Caffe **nhanh hơn** PyTorch trên CPU: độ dốc 1,46 so với 1,88 ms/ảnh. GPU thì gần như
+bằng nhau: 63,0 so với 67,7 µs/ảnh. Tách số học: 27,8 × (1,46 / 1,88) × (67,7 / 63,0) ≈ 23,2, khớp 23,3. Như vậy tỷ lệ giảm **vì code CPU tự viết tốt hơn
+đường im2col của PyTorch**, không phải vì GPU tự viết kém. Phép tách này dùng số của hai phiên Kaggle khác nhau.
+
+**CPU** (tách bước, batch 256, µs/ảnh):
+
+| Bước | C tự viết | PyTorch (22/11) |
+|---|---|---|
+| im2col | **132** | 804 |
+| GEMM | 1302 (52 GFLOP/s) | 769 (MKL, 88 GFLOP/s) |
+| Cả conv kiểu Caffe | 1450 | 1758 |
+
+- **im2col** viết tay là vòng lặp chép đơn giản, nhanh hơn của PyTorch 6 lần. im2col của PyTorch trên CPU chậm bất thường; nguyên nhân không tìm hiểu.
+- **GEMM chia khối** (ô 4×16 giữ trong thanh ghi, khối B 16 cột chép liền) bằng 59% tốc độ của MKL.
+- **Conv trực tiếp** (vòng lặp thẳng theo định nghĩa) chậm hơn kiểu Caffe **8,1 lần** (11,8 ms/ảnh): không tái dùng dữ liệu trong cache, và truy cập ảnh theo bước 4.
+
+**GPU** (batch 256, tính theo chu kỳ = µs × xung nhịp đo được, vì T4 bị giới hạn công suất):
+
+| | C/CUDA tự viết | PyTorch (cuBLAS) |
+|---|---|---|
+| im2col | **17,3** nghìn chu kỳ/ảnh | 43,6 nghìn |
+| GEMM | 68,9 nghìn (19,2% trần FP32) | 51,4 nghìn (25,7%) |
+| Cả conv kiểu Caffe | **86,2** nghìn (15,3% trần) | 95,5 nghìn (13,9%) |
+| Batched (gộp cả batch) | 72,7 nghìn (−16% so với kiểu Caffe) | 77,2 nghìn (−19%) |
+
+- **Kernel im2col tự viết tốn 2,5 lần ít chu kỳ hơn** của PyTorch: mỗi luồng ghi một phần tử, các luồng liền nhau ghi địa chỉ liền nhau, nên ghi được gộp.
+- **GEMM tự viết** (ô 48×64, mỗi luồng giữ 12 tổng trong thanh ghi) tốn nhiều chu kỳ hơn cuBLAS 34%.
+- **Tổng cộng**, đường tự viết tốn ít chu kỳ hơn 10%. Theo thời gian đồng hồ thì gần như bằng nhau: 63,3 so với 65,9 µs/ảnh.
+- **Batched** ít chu kỳ hơn kiểu Caffe như ở bản PyTorch. Nhưng theo thời gian lại chậm hơn ở batch lớn (67 so với 63 µs/ảnh), vì xung nhịp khi chạy
+  batched thấp hơn (1,09 so với 1,36 GHz). Đây cùng hiện tượng đã thấy ở mục 2: T4 sát trần công suất.
+- **Conv trực tiếp trên GPU chậm hơn kiểu Caffe khoảng 3 lần** (185–211 µs/ảnh), chỉ đạt **4,9% trần**; dự đoán E9 cho phần này sai. Giả thuyết chưa kiểm:
+  - mỗi phép FMA cần một lần đọc ảnh từ bộ nhớ toàn cục;
+  - các luồng trong warp đọc cách nhau 4 phần tử, nên truy cập không gộp hết;
+  - không có tái dùng qua shared memory như GEMM chia ô.
+
+  Chưa đo bằng profiler.
+
+### 8.3. Matvec (FC) và băng thông
+
+| | CPU (C) | GPU (CUDA) |
+|---|---|---|
+| Đọc tốt nhất (`sum`, `dot`), n = 16384 | 12,4 GB/s | 269 GB/s (84% danh định 320) |
+| `matvec` / đọc tốt nhất, n = 4096 / 8192 / 16384 | 87% / 93% / 93% | 97% / 99% / 100% |
+| `matvec_naive` | 2,9–3,0 GB/s (một tổng: mỗi phép cộng chờ phép trước) | 80–87 GB/s (một luồng mỗi hàng: đọc không gộp) |
+
+- Cả hai **bị giới hạn bởi băng thông bộ nhớ**. Con số gần với bản PyTorch (CPU 13,4–14,3, GPU 253–272 GB/s), nên matvec của thư viện cũng không làm được gì hơn trần bộ nhớ.
+- Tỷ lệ matvec GPU/CPU (19,7× ở n = 8192, 23,3× ở n = 16384) lệch **+7–8%** so với tỷ lệ băng thông đọc đo trong cùng lần chạy (18,9× và 21,6×).
+  Đây là máy Kaggle thứ hai cho cùng kết luận "speedup FC ≈ tỷ lệ băng thông" (lần trước lệch tối đa 7%), nhưng vẫn cùng loại máy.
+- Bản "naive" chậm hơn 4 lần trên CPU và khoảng 3 lần trên GPU ở n ≥ 4096. Nhưng **ở n = 4096 trên GPU vẫn có 16 khối cho 40 SM**, nên một phần là do
+  thiếu song song chứ không chỉ do truy cập không gộp.
+- Số mũ k trên GPU (1,86) nhỏ hơn 2 vì GPU chưa bão hòa băng thông ở n = 4096 (228 GB/s), mà mới bão hòa ở n ≥ 12288 (269 GB/s).
+
+### 8.4. GEMM: bậc thang tối ưu
+
+| GFLOP/s | n = 512 | n = 1024 | n = 2048 | n = 4096 |
+|---|---|---|---|---|
+| CPU `gemm_naive` (i, j, k) | 1,4 | – | – | – |
+| CPU `gemm_ikj` (đổi thứ tự vòng lặp) | 20,8 | 13,3 | 14,1 | – |
+| CPU `gemm` (chia khối, thanh ghi) | 34,3 | 30,3 | 28,5 | – |
+| GPU `gemm_naive` | 516 | 573 | 457 | 453 (9,7% trần) |
+| GPU `gemm_tiled` (shared memory 16×16) | 586 | 695 | 603 | 605 (12,2%) |
+| GPU `gemm` (ô 64×64, 16 tổng mỗi luồng) | 1241 | 1739 | 1838 | 1806 (**38,6%**) |
+
+- **CPU:** đổi thứ tự vòng lặp nhanh hơn 15 lần (đọc B theo hàng thay vì theo cột); chia khối thêm 2,1–2,3 lần. GEMM chia khối chạy ở ma trận vuông
+  (28–35 GFLOP/s) chậm hơn ở hình dạng của conv (52 GFLOP/s), và chậm hơn MKL nhiều (129 GFLOP/s ở n = 4096, bản PyTorch).
+- **GPU:** shared memory chỉ thêm 1,3 lần (mỗi phép FMA vẫn cần 2 lần đọc shared memory); giữ ô trong thanh ghi thêm 3 lần. Bản tốt nhất đạt 38,6% trần
+  so với 84–97% của cuBLAS. Phần còn lại là các tối ưu mà kernel này chưa có: nạp dữ liệu kép, đọc float4 vào shared memory, ô lớn hơn.
+
+### 8.5. FC với B vector
+
+Ở n = 8192, tỷ lệ CPU/GPU là 23,7× (B = 1), 16,9× (16), 60× (64) và 67× (128). Con số ở B ≥ 64 **lớn hơn** 40–57× của bài báo. Lý do là GEMM C tự viết cho
+ma trận "cao và hẹp" chỉ đạt khoảng 25 GFLOP/s, trong khi GPU đạt 1,5–1,7 TFLOP/s. Tỷ lệ này phụ thuộc vào chất lượng GEMM của mỗi bên nhiều hơn là vào phần cứng.
+Vì vậy nó **không giúp xác nhận hay bác bỏ** giả thuyết "FC của bài báo là nhân nhiều vector" (mục 3).
+
+### 8.6. Dự đoán E1–E10
+
+**Đúng:** E2, E4, E5, E7, E8. **Gần như đúng:** E6 (một lần đo ở n = 8192 dưới ngưỡng 240 GB/s). **Đúng một phần:** E1 (số mũ matvec GPU 1,86 < 1,9).
+**Sai theo hướng nhanh hơn:** E3 (im2col GPU và cả conv tốn ít chu kỳ hơn khoảng dự đoán). **Đúng một nửa:** E9 (conv trực tiếp GPU chậm hơn).
+**Chưa chạy:** E10 (laptop). Chi tiết ở [PLAN_C_CUDA.md](PLAN_C_CUDA.md) mục 6.
+
+### 8.7. Giới hạn của bản C/CUDA
+
+- **Một phiên Kaggle, 3 lần chạy.** So với bản PyTorch là so hai phiên khác nhau. Loại CPU và GPU giống nhau, nhưng có thể khác máy vật lý.
+- **Kết quả `--check-only` trên Kaggle không lưu vào thư mục kết quả**, vì log mở sau bước kiểm tra. Chương trình chỉ đo khi mọi kiểm tra đều qua, nên các
+  kiểm tra đã qua, nhưng file không ghi lại bằng chứng. Trên laptop, bản C đã qua 28 kiểm tra; bản CUDA đã qua 42 kiểm tra trên bộ giả lập CPU trước khi chạy Kaggle.
+- **Một số thứ dùng thư viện nhưng nằm ngoài phần tính giờ:** xung nhịp GPU (NVML qua Python), phân tích (pandas). Giả định là được phép; cần nhóm hoặc giảng viên xác nhận.
+- **SIMD của trình biên dịch có trong bản C** (1 lõi, 1 luồng). Bản vô hướng thật sự (`-fno-tree-vectorize`) chưa đo.
+- **Tỷ lệ GPU/CPU phản ánh cả chất lượng code tự viết:** GEMM GPU chỉ 38,6% trần, GEMM CPU 59% so với MKL. Bài báo dùng Caffe với BLAS và cuBLAS.
+- **Chưa làm:** E10 (laptop), một phiên Kaggle khác, profiler cho conv trực tiếp trên GPU.
 
 ## Nguồn
 

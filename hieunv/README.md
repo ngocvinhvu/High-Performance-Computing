@@ -10,20 +10,33 @@ Bài báo đo thời gian forward của lớp convolution theo batch size (Hình
 tăng theo batch và theo n, GPU nhanh hơn khoảng 40 lần) có lặp lại trên phần cứng hiện tại không? Nếu con số khác
 thì đo được nguyên nhân nào? Thư mục này **chỉ đo lại mục 3**; phần SGD phân tán của bài không được chạy ở đây.
 
+Có **hai bản đo**:
+
+- **Bản chính thức, không dùng thư viện song song** (yêu cầu của bài tập lớn): C tuần tự 1 luồng trên CPU và kernel CUDA
+  tự viết trên GPU, trong [`c_cuda/`](c_cuda/).
+- **Bản PyTorch** (MKL/oneDNN, cuBLAS/cuDNN): đo trước đó, được giữ làm mốc tham khảo cho biết thư viện tối ưu đạt được
+  bao nhiêu trên cùng loại máy.
+
 ## Cấu trúc thư mục
 
 | Đường dẫn | Nội dung |
 |---|---|
-| [`code/`](code/) | Code đo (PyTorch): `bench_conv.py`, `bench_fc.py`, `run_all.py` (một lần chạy), `run_session.py` (ba lần chạy trên laptop), `aggregate.py`, `plot.py`, `gpu_diag.py`. Chi tiết ở [code/README.md](code/README.md) |
+| [`code/`](code/) | Code đo bản PyTorch: `bench_conv.py`, `bench_fc.py`, `run_all.py` (một lần chạy), `run_session.py` (ba lần chạy trên laptop), `aggregate.py`, `plot.py`, `gpu_diag.py`. Chi tiết ở [code/README.md](code/README.md) |
 | [`kaggle/hpc_replication_kaggle.ipynb`](kaggle/hpc_replication_kaggle.ipynb) | Notebook tự chứa để chạy trên Kaggle, sinh từ `code/make_kaggle_notebook.py` |
+| [`c_cuda/`](c_cuda/) | Bản không dùng thư viện song song (theo yêu cầu bài tập lớn): `bench_seq.c` (C tuần tự, 1 luồng) và `bench_cuda.cu` (kernel CUDA tự viết, không cuBLAS/cuDNN). Chi tiết ở [c_cuda/README.md](c_cuda/README.md) |
+| [`PLAN_C_CUDA.md`](PLAN_C_CUDA.md) | Kế hoạch đo lại bằng bản C/CUDA và dự đoán E1–E10, commit trước khi chạy; cột kết quả điền sau |
+| [`kaggle/hpc_c_cuda_kaggle.ipynb`](kaggle/hpc_c_cuda_kaggle.ipynb) | Notebook Kaggle cho bản C/CUDA, sinh từ `code/make_c_cuda_notebook.py` |
 | [`results/`](results/) | Dữ liệu gốc (CSV, `env.json`, log) và hình. Nên dùng thư mục nào: [results/README.md](results/README.md) |
-| [`ANALYSIS.md`](ANALYSIS.md) | Phân tích: đối chiếu từng kết luận của bài báo, mô hình, giới hạn, bước kiểm chứng tiếp |
+| [`ANALYSIS.md`](ANALYSIS.md) | Phân tích: đối chiếu từng kết luận của bài báo, mô hình, giới hạn, bước kiểm chứng tiếp. Bản C/CUDA ở mục 8 |
 | [`PREDICTIONS.md`](PREDICTIONS.md) | Dự đoán ghi trước khi đo băng thông (kiểm chứng ANALYSIS mục 7); cột kết quả điền sau khi chạy |
-| [`results/analysis/`](results/analysis/) | Bảng số (`tables.md`) và 3 hình phân tích (Hình 7–9), sinh từ `code/analyze.py` |
+| [`results/analysis/`](results/analysis/) | Bảng số (`tables.md`, `mem_tables.md`, `c_cuda_tables.md`) và Hình 7–10, sinh từ `code/analyze.py`, `analyze_mem.py`, `analyze_c_cuda.py` |
 | [`results/paper_digitized.csv`](results/paper_digitized.csv) | Điểm đọc từ Hình 1–4 của bài báo, kèm sai số đọc |
 | [`REFERENCES.md`](REFERENCES.md) | Trích dẫn và đường dẫn tài liệu |
 
-Dữ liệu chính thức: `results/kaggle/agg_20261122_074407` và `results/laptop/agg_20261122_152118`.
+Dữ liệu chính thức:
+
+- bản C/CUDA: `results/kaggle/c_cuda{1,2,3}_20261125_050209`;
+- bản PyTorch: `results/kaggle/agg_20261122_074407` và `results/laptop/agg_20261122_152118`.
 
 ## Cách chạy lại
 
@@ -33,7 +46,32 @@ Môi trường đã dùng:
 |---|---|---|
 | CPU | AMD Ryzen 7 5800H, torch dùng tối đa 8 luồng | Intel Xeon 2.00 GHz, 4 vCPU, torch dùng tối đa 2 luồng |
 | GPU | Không có GPU CUDA | Tesla T4 (chỉ dùng một GPU) |
-| Phần mềm | Windows 10, Python 3.12.10, PyTorch 2.15.0+cpu | Linux, Python 3.13.16, PyTorch 2.11.0+cu130, CUDA 13.0 |
+| Phần mềm (bản PyTorch) | Windows 10, Python 3.12.10, PyTorch 2.15.0+cpu | Linux, Python 3.13.16, PyTorch 2.11.0+cu130, CUDA 13.0 |
+| Phần mềm (bản C/CUDA) | WSL Ubuntu 24.04, gcc 13.3 (chỉ thử, chưa đo chính thức) | gcc 13.3, nvcc 13.0, `-arch=sm_75` |
+
+**Bản C/CUDA, trên Kaggle.** Import [`kaggle/hpc_c_cuda_kaggle.ipynb`](kaggle/hpc_c_cuda_kaggle.ipynb), chọn **GPU T4 x2**,
+bấm Run All. Notebook làm lần lượt:
+
+1. biên dịch bằng gcc và nvcc;
+2. in `ldd` để thấy hai chương trình không liên kết BLAS, OpenMP, cuBLAS hay cuDNN;
+3. kiểm tra mọi kernel so với float64 (sai thì dừng);
+4. chạy 3 lần: GPU trước, sau đó CPU.
+
+Tổng cộng khoảng 16 phút. Tải `results_c_cuda.zip` về `results/kaggle/`.
+
+**Bản C trên Linux hoặc WSL:**
+
+```bash
+cd hieunv/c_cuda && make seq && ./bench_seq --check-only && ./bench_seq --machine laptop --outdir ../results/laptop/seq_quick --quick
+```
+
+Bảng số của bản C/CUDA (chạy trong `hieunv\code`):
+
+```powershell
+python analyze_c_cuda.py
+```
+
+**Bản PyTorch:**
 
 **Laptop.** Cắm sạc, chọn chế độ "Best performance", đóng các ứng dụng khác. Phiên chính gồm 3 lần chạy, mỗi lần khoảng
 6 phút cộng 60 giây nghỉ trước mỗi lần, tổng khoảng 21 phút. Chạy từ thư mục gốc của repo:
@@ -82,12 +120,48 @@ python plot.py ..\results\kaggle\agg_20261122_074407 --figdir $env:TEMP\figures_
 
 ## Kết quả
 
+### Bản C/CUDA, không dùng thư viện (chính thức)
+
+**Điều kiện đo:**
+- **Máy:** Kaggle, Tesla T4 và Xeon 2,0 GHz (cùng loại máy với bản PyTorch), lớp conv như dưới đây.
+- **CPU:** C 1 luồng. **GPU:** kernel CUDA tự viết.
+- **Số lần tính giờ:** GPU 30 lần mỗi điểm, CPU 10 lần, 3 lần chạy trong một phiên. Số là trung vị 3 lần; ngoặc đơn là khoảng của từng lần.
+- **Trước khi chạy:** kế hoạch và dự đoán E1–E10 đã được commit
+  ([PLAN_C_CUDA.md](PLAN_C_CUDA.md)); mọi kernel được kiểm tra so với float64.
+
+| | Bản C/CUDA | Bản PyTorch | Bài báo |
+|---|---|---|---|
+| Conv kiểu Caffe, độ dốc CPU (ms/ảnh) | 1,46 (1,40–1,48) | 1,88 | 6,45 |
+| Conv kiểu Caffe, độ dốc GPU (ms/ảnh) | 0,0630 (0,0629–0,0635) | 0,0677 | 0,16 |
+| **Tỷ lệ conv CPU / GPU** | **23,3×** (22,3–23,3) | 27,8× | khoảng 40× |
+| Speedup conv theo batch | 18,6× (batch 1) → 22,7× (32) → 23,1× (256) | 18,6× → 27–28× | 37,0× → 40,8× (batch 16–256) |
+| **Matvec n = 16384, GPU / CPU** | **23,1×** | 21,7× | 52–57× ở n = 4096–8192 (có thể là phép khác) |
+| Matvec: % băng thông đọc đo độc lập, n = 16384 | CPU 93%, GPU 100% | CPU 92%, GPU 99% | – |
+| GEMM n = 4096 trên GPU | 1,81 TFLOP/s (38,6% trần ở xung đo) | 3,0–3,5 TFLOP/s (84–97%) | – |
+
+- **Vì sao tỷ lệ thấp hơn bản PyTorch?** Bản C nhanh hơn PyTorch trên CPU (im2col viết tay 0,13 so với 0,80 ms/ảnh; GEMM 52 so với 88 GFLOP/s của MKL),
+  còn GPU tự viết gần bằng: 86 nghìn so với 95,5 nghìn chu kỳ/ảnh.
+- **Bậc thang tối ưu** (n = 4096 trên GPU, n = 1024–2048 trên CPU):
+  - GPU: naive 453 → shared memory 605 → chia khối thanh ghi 1806 GFLOP/s;
+  - CPU: i-j-k 1,4 → đổi thứ tự vòng lặp 13–21 → chia khối 28–34 GFLOP/s.
+- **Dự đoán E1–E10:**
+  - đúng: E2, E4, E5, E7, E8;
+  - gần như đúng: E6;
+  - đúng một phần: E1 (số mũ matvec GPU 1,86);
+  - sai: E3 (nhanh hơn dự đoán);
+  - đúng một nửa: E9 (conv trực tiếp trên GPU chậm hơn kiểu Caffe khoảng 3 lần);
+  - chưa chạy: E10.
+
+Phân tích đầy đủ: [ANALYSIS.md](ANALYSIS.md) mục 8; bảng số: [`results/analysis/c_cuda_tables.md`](results/analysis/c_cuda_tables.md).
+
+### Bản PyTorch (tham khảo)
+
 Điều kiện đo: ảnh xám 224×224, 96 filter 11×11, stride 4 (đầu ra 54×54); bản chính là kiểu Caffe (im2col rồi nhân ma
 trận cho **từng ảnh**). Không tính thời gian copy dữ liệu giữa CPU và GPU. Mỗi điểm: 3 lần khởi động và 30 lần tính giờ;
 **3 lần chạy** trên mỗi máy (cùng một phiên), thứ tự kích thước xáo trộn. Số dưới đây là trung bình 3 lần; ngoặc đơn là
 khoảng của từng lần chạy.
 
-### Dự đoán trước khi chạy và kết quả
+#### Dự đoán trước khi chạy và kết quả
 
 Dự đoán ghi trong kế hoạch ngày 21/11/2026, trước khi viết code đo. Kế hoạch đó **không nằm trong git** nên không kiểm
 chứng được thứ tự thời gian từ lịch sử repo.
@@ -103,7 +177,7 @@ Các hướng giải thích khác trong kế hoạch (vòng lặp từng ảnh, 
 không đúng: [ANALYSIS.md](ANALYSIS.md) mục 5. Dự đoán của phép đo băng thông sau đó (D1–D6, ghi trước khi đo) ở [PREDICTIONS.md](PREDICTIONS.md):
 D1, D2 (gần như hoàn toàn), D3, D5 đúng; **D4 sai** (đoán 22–28×, đo được 35× ở B = 64).
 
-### Các con số chính
+#### Các con số chính
 
 **Convolution, kiểu Caffe (độ dốc của đường thời gian theo batch, ms/ảnh):**
 
@@ -146,6 +220,15 @@ Hình và bảng đầy đủ: [`results/kaggle/agg_20261122_074407/figures/`](r
 
 ### Đã chứng minh (trong phạm vi các lần đo này)
 
+- **Bản không dùng thư viện cho cùng các xu hướng:**
+  - conv tuyến tính theo batch (R² ≥ 0,999);
+  - speedup tăng đến batch khoảng 32 rồi phẳng ở khoảng 23×;
+  - matvec bị giới hạn bởi băng thông bộ nhớ trên cả CPU và GPU;
+  - tỷ lệ matvec GPU/CPU lệch không quá 8% so với tỷ lệ băng thông đo độc lập.
+
+  Một phiên Kaggle, 3 lần chạy; dự đoán được commit trước khi chạy.
+- **Con số "GPU nhanh hơn bao nhiêu lần" phụ thuộc vào cách cài đặt:** trên cùng loại máy là 27,8× với PyTorch, 23,3× với C/CUDA tự viết, 14× với `nn.Conv2d`.
+
 - Thời gian convolution tuyến tính theo batch trên cả CPU và GPU; matvec xấp xỉ bậc hai theo n trên CPU ở cả hai máy.
 - Tỷ lệ CPU 1 luồng / GPU cho convolution kiểu Caffe là 27–29× trên máy Kaggle, ổn định giữa 3 lần chạy. Speedup tăng theo batch rồi phẳng.
 - Bậc nhảy thời gian GPU theo batch (thấy ở lần chạy đầu: 109 µs/ảnh ở batch 64, 69 µs/ảnh từ batch 128) **không phải do batch size**: khi xáo trộn thứ tự
@@ -157,6 +240,9 @@ Hình và bảng đầy đủ: [`results/kaggle/agg_20261122_074407/figures/`](r
 
 ### Chưa chứng minh
 
+- Vì sao conv trực tiếp trên GPU chỉ đạt 4,9% trần FP32, chậm hơn kiểu Caffe khoảng 3 lần. Có giả thuyết (đọc không gộp, không dùng shared memory), chưa dùng profiler.
+- Bản C/CUDA chưa chạy trên phiên Kaggle khác hay trên laptop (E10).
+
 - **Nguyên nhân** của khác biệt so với con số 40× của bài báo (27,8× ở đây): phần cứng, phần mềm và cách cài đặt đều khác
   nhau, chúng tôi không tách được từng yếu tố.
 - **Speedup FC bằng tỷ lệ băng thông bộ nhớ** mới được kiểm chứng trên **một** máy Kaggle (khớp trong 7%, xem bên trên); chưa biết có lặp lại ở máy khác.
@@ -165,6 +251,12 @@ Hình và bảng đầy đủ: [`results/kaggle/agg_20261122_074407/figures/`](r
 - Vì sao số tuyệt đối FC của bài báo không khớp matvec thường (CPU khoảng 0,28 GB/s, GPU khoảng 14–16 GB/s): giả thuyết là nhân với nhiều vector (khoảng 64–78), **chưa kiểm chứng**; xem ANALYSIS.md mục 3.
 
 ## Giới hạn
+
+- **Bản C/CUDA:**
+  - kết quả kiểm tra đúng đắn trên Kaggle không được lưu thành file (log mở sau bước kiểm tra), dù chương trình chỉ đo khi mọi kiểm tra đều qua;
+  - phần ngoài thời gian đo (ghi xung nhịp GPU, phân tích) vẫn dùng Python và thư viện; cần nhóm hoặc giảng viên xác nhận là được phép;
+  - bản C có SIMD do trình biên dịch tự sinh trong 1 lõi;
+  - tỷ lệ GPU/CPU phản ánh cả chất lượng code tự viết: GEMM GPU 38,6% trần, GEMM CPU 59% so với MKL.
 
 - **Mỗi máy chỉ có 3 lần chạy trong cùng một phiên.** Dao động giữa các lần là trôi trên một máy, không phải giữa các máy. Kế hoạch
   định chạy 2–3 phiên khác nhau, chưa làm. Trên Kaggle, GPU nóng dần (khoảng 54 → 80 °C) nên xung nhịp khi đo conv giảm khoảng 7%

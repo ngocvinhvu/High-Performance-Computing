@@ -1,0 +1,22 @@
+{
+  "program": "bench_seq (sequential C, 1 thread, no external library)",
+  "machine": "kaggle",
+  "recorded_utc": "2026-11-25T05:15:17+00:00",
+  "cpu": "Intel(R) Xeon(R) CPU @ 2.00GHz",
+  "compiler": "13.3.0",
+  "experiments": "conv,fc,gemm,bw,fcb,step",
+  "batches": "1,8,16,32,64,96,128,160,192,224,256",
+  "direct_batches": "1,16,64,256",
+  "matvec_sizes": "256,512,1024,2048,4096,8192,12288,16384",
+  "gemm_sizes": "256,512,1024,1536,2048",
+  "gemm_naive_sizes": "256,512",
+  "bw_sizes": "1024,4096,8192,16384",
+  "fc_sizes": "2048,8192",
+  "fc_b": "1,16,64,128",
+  "step_batches": "16,64,256",
+  "process_threads": "1",
+  "warmup": 3,
+  "repeat": 10,
+  "order_seed": 3,
+  "quick": 0
+}
