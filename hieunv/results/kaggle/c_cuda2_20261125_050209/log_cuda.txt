@@ -1,0 +1,109 @@
+bench_cuda: machine kaggle, outdir /kaggle/working/results/kaggle/c_cuda2_20261125_050209, warmup 3, repeat 30, order seed 2, warm 5.0 s
+conv  cuda caffe         batch=128        8.226 ms +- 0.357  (64.3 us/img, 1054 GFLOP/s)  issue 0.650 ms
+conv  cuda caffe         batch=224       14.168 ms +- 0.134  (63.2 us/img, 1071 GFLOP/s)  issue 1.147 ms
+conv  cuda caffe         batch=16         0.973 ms +- 0.025  (60.8 us/img, 1114 GFLOP/s)  issue 0.082 ms
+conv  cuda caffe         batch=256       16.220 ms +- 0.116  (63.4 us/img, 1069 GFLOP/s)  issue 1.376 ms
+conv  cuda caffe         batch=64         4.055 ms +- 0.053  (63.4 us/img, 1069 GFLOP/s)  issue 0.329 ms
+conv  cuda caffe         batch=1          0.070 ms +- 0.001  (70.4 us/img, 962 GFLOP/s)  issue 0.005 ms
+conv  cuda caffe         batch=8          0.507 ms +- 0.003  (63.3 us/img, 1070 GFLOP/s)  issue 0.043 ms
+conv  cuda caffe         batch=96         6.039 ms +- 0.048  (62.9 us/img, 1077 GFLOP/s)  issue 0.491 ms
+conv  cuda caffe         batch=192       12.144 ms +- 0.106  (63.3 us/img, 1071 GFLOP/s)  issue 1.015 ms
+conv  cuda caffe         batch=32         1.967 ms +- 0.037  (61.5 us/img, 1102 GFLOP/s)  issue 0.174 ms
+conv  cuda caffe         batch=160       10.131 ms +- 0.083  (63.3 us/img, 1070 GFLOP/s)  issue 0.822 ms
+conv  cuda batched       batch=128        7.852 ms +- 0.357  (61.3 us/img, 1104 GFLOP/s)  issue 0.010 ms
+conv  cuda batched       batch=224       14.801 ms +- 0.251  (66.1 us/img, 1025 GFLOP/s)  issue 0.016 ms
+conv  cuda batched       batch=16         0.870 ms +- 0.027  (54.4 us/img, 1246 GFLOP/s)  issue 0.006 ms
+conv  cuda batched       batch=256       17.148 ms +- 0.237  (67.0 us/img, 1011 GFLOP/s)  issue 0.011 ms
+conv  cuda batched       batch=64         3.696 ms +- 0.071  (57.7 us/img, 1173 GFLOP/s)  issue 0.007 ms
+conv  cuda batched       batch=1          0.090 ms +- 0.003  (90.4 us/img, 749 GFLOP/s)  issue 0.005 ms
+conv  cuda batched       batch=8          0.446 ms +- 0.121  (55.7 us/img, 1215 GFLOP/s)  issue 0.006 ms
+conv  cuda batched       batch=96         5.674 ms +- 0.154  (59.1 us/img, 1146 GFLOP/s)  issue 0.012 ms
+conv  cuda batched       batch=192       12.424 ms +- 0.180  (64.7 us/img, 1047 GFLOP/s)  issue 0.012 ms
+conv  cuda batched       batch=32         1.629 ms +- 0.084  (50.9 us/img, 1331 GFLOP/s)  issue 0.006 ms
+conv  cuda batched       batch=160       10.100 ms +- 0.119  (63.1 us/img, 1073 GFLOP/s)  issue 0.011 ms
+conv  cuda direct        batch=128       24.441 ms +- 0.202  (190.9 us/img, 355 GFLOP/s)  issue 0.008 ms
+conv  cuda direct        batch=224       45.724 ms +- 0.505  (204.1 us/img, 332 GFLOP/s)  issue 0.010 ms
+conv  cuda direct        batch=16         2.968 ms +- 0.187  (185.5 us/img, 365 GFLOP/s)  issue 0.005 ms
+conv  cuda direct        batch=256       53.971 ms +- 0.633  (210.8 us/img, 321 GFLOP/s)  issue 0.013 ms
+conv  cuda direct        batch=64        11.841 ms +- 0.098  (185.0 us/img, 366 GFLOP/s)  issue 0.007 ms
+conv  cuda direct        batch=1          0.195 ms +- 0.004  (194.6 us/img, 348 GFLOP/s)  issue 0.004 ms
+conv  cuda direct        batch=8          1.398 ms +- 0.031  (174.7 us/img, 388 GFLOP/s)  issue 0.004 ms
+conv  cuda direct        batch=96        18.319 ms +- 0.122  (190.8 us/img, 355 GFLOP/s)  issue 0.007 ms
+conv  cuda direct        batch=192       38.135 ms +- 0.562  (198.6 us/img, 341 GFLOP/s)  issue 0.010 ms
+conv  cuda direct        batch=32         5.859 ms +- 0.069  (183.1 us/img, 370 GFLOP/s)  issue 0.005 ms
+conv  cuda direct        batch=160       31.292 ms +- 0.273  (195.6 us/img, 346 GFLOP/s)  issue 0.009 ms
+fc    cuda matvec_naive  n=2048        0.600 ms +- 0.010  (14.0 GFLOP/s, 28.0 GB/s)
+fc    cuda matvec_naive  n=1024        0.243 ms +- 0.002  (8.6 GFLOP/s, 17.2 GB/s)
+fc    cuda matvec_naive  n=256         0.067 ms +- 0.000  (2.0 GFLOP/s, 3.9 GB/s)
+fc    cuda matvec_naive  n=512         0.113 ms +- 0.007  (4.6 GFLOP/s, 9.3 GB/s)
+fc    cuda matvec_naive  n=16384      12.653 ms +- 0.103  (42.4 GFLOP/s, 84.9 GB/s)
+fc    cuda matvec_naive  n=8192        3.145 ms +- 0.063  (42.7 GFLOP/s, 85.3 GB/s)
+fc    cuda matvec_naive  n=4096        0.821 ms +- 0.012  (40.9 GFLOP/s, 81.8 GB/s)
+fc    cuda matvec_naive  n=12288       7.493 ms +- 0.047  (40.3 GFLOP/s, 80.6 GB/s)
+fc    cuda matvec        n=2048        0.072 ms +- 0.000  (116.8 GFLOP/s, 233.6 GB/s)
+fc    cuda matvec        n=1024        0.015 ms +- 0.003  (138.2 GFLOP/s, 276.5 GB/s)
+fc    cuda matvec        n=256         0.010 ms +- 0.002  (13.5 GFLOP/s, 27.0 GB/s)
+fc    cuda matvec        n=512         0.011 ms +- 0.000  (47.9 GFLOP/s, 95.8 GB/s)
+fc    cuda matvec        n=16384       3.986 ms +- 0.003  (134.7 GFLOP/s, 269.4 GB/s)
+fc    cuda matvec        n=8192        1.184 ms +- 0.123  (113.4 GFLOP/s, 226.8 GB/s)
+fc    cuda matvec        n=4096        0.294 ms +- 0.035  (114.1 GFLOP/s, 228.1 GB/s)
+fc    cuda matvec        n=12288       2.247 ms +- 0.002  (134.4 GFLOP/s, 268.8 GB/s)
+gemm  cuda gemm_naive    n=1536       15.972 ms +- 0.258  (454 GFLOP/s)
+gemm  cuda gemm_naive    n=2048       37.578 ms +- 0.442  (457 GFLOP/s)
+gemm  cuda gemm_naive    n=1024        3.846 ms +- 0.179  (558 GFLOP/s)
+gemm  cuda gemm_naive    n=3072      128.784 ms +- 0.559  (450 GFLOP/s)
+gemm  cuda gemm_naive    n=4096      305.171 ms +- 0.592  (450 GFLOP/s)
+gemm  cuda gemm_naive    n=512         0.552 ms +- 0.013  (486 GFLOP/s)
+gemm  cuda gemm_naive    n=256         0.073 ms +- 0.002  (458 GFLOP/s)
+gemm  cuda gemm_tiled    n=1536       12.121 ms +- 0.185  (598 GFLOP/s)
+gemm  cuda gemm_tiled    n=2048       28.476 ms +- 0.351  (603 GFLOP/s)
+gemm  cuda gemm_tiled    n=1024        3.101 ms +- 0.183  (692 GFLOP/s)
+gemm  cuda gemm_tiled    n=3072       98.471 ms +- 0.840  (589 GFLOP/s)
+gemm  cuda gemm_tiled    n=4096      228.323 ms +- 0.834  (602 GFLOP/s)
+gemm  cuda gemm_tiled    n=512         0.458 ms +- 0.020  (586 GFLOP/s)
+gemm  cuda gemm_tiled    n=256         0.065 ms +- 0.002  (515 GFLOP/s)
+gemm  cuda gemm          n=1536        3.905 ms +- 0.040  (1856 GFLOP/s)
+gemm  cuda gemm          n=2048        9.435 ms +- 0.174  (1821 GFLOP/s)
+gemm  cuda gemm          n=1024        1.238 ms +- 0.043  (1735 GFLOP/s)
+gemm  cuda gemm          n=3072       32.299 ms +- 0.371  (1795 GFLOP/s)
+gemm  cuda gemm          n=4096       76.281 ms +- 0.404  (1802 GFLOP/s)
+gemm  cuda gemm          n=512         0.216 ms +- 0.011  (1241 GFLOP/s)
+gemm  cuda gemm          n=256         0.064 ms +- 0.000  (522 GFLOP/s)
+bw    cuda sum           n=1024        0.027 ms +- 0.007  (153.5 GB/s)
+bw    cuda sum           n=16384       3.995 ms +- 0.008  (268.8 GB/s)
+bw    cuda sum           n=4096        0.325 ms +- 0.001  (206.2 GB/s)
+bw    cuda sum           n=8192        1.136 ms +- 0.131  (236.2 GB/s)
+bw    cuda dot           n=1024        0.046 ms +- 0.002  (180.9 GB/s)
+bw    cuda dot           n=16384       8.049 ms +- 0.023  (266.8 GB/s)
+bw    cuda dot           n=4096        0.640 ms +- 0.003  (209.6 GB/s)
+bw    cuda dot           n=8192        2.227 ms +- 0.273  (241.1 GB/s)
+bw    cuda copy          n=1024        0.045 ms +- 0.001  (187.1 GB/s)
+bw    cuda copy          n=16384       9.822 ms +- 0.043  (218.6 GB/s)
+bw    cuda copy          n=4096        0.699 ms +- 0.006  (192.0 GB/s)
+bw    cuda copy          n=8192        2.588 ms +- 0.166  (207.4 GB/s)
+bw    cuda triad         n=1024        0.060 ms +- 0.001  (209.7 GB/s)
+bw    cuda triad         n=16384      13.594 ms +- 0.033  (237.0 GB/s)
+bw    cuda triad         n=4096        0.958 ms +- 0.004  (210.0 GB/s)
+bw    cuda triad         n=8192        3.728 ms +- 0.179  (216.0 GB/s)
+bw    cuda matvec        n=1024        0.023 ms +- 0.006  (186.0 GB/s)
+bw    cuda matvec        n=16384       3.989 ms +- 0.003  (269.2 GB/s)
+bw    cuda matvec        n=4096        0.317 ms +- 0.001  (211.4 GB/s)
+bw    cuda matvec        n=8192        1.146 ms +- 0.124  (234.2 GB/s)
+fcb   cuda B=128  n=2048        0.856 ms +- 0.038  (1255 GFLOP/s)
+fcb   cuda B=64   n=2048        0.499 ms +- 0.013  (1075 GFLOP/s)
+fcb   cuda B=1    n=2048        0.071 ms +- 0.001  (118 GFLOP/s)
+fcb   cuda B=16   n=2048        0.447 ms +- 0.007  (300 GFLOP/s)
+fcb   cuda B=128  n=8192        9.980 ms +- 0.605  (1721 GFLOP/s)
+fcb   cuda B=16   n=8192        5.389 ms +- 0.094  (398 GFLOP/s)
+fcb   cuda B=1    n=8192        1.007 ms +- 0.004  (133 GFLOP/s)
+fcb   cuda B=64   n=8192        5.669 ms +- 0.437  (1515 GFLOP/s)
+step  cuda im2col        batch=16         0.299 ms +- 0.002  (18.7 us/img)  issue 0.041 ms
+step  cuda im2col        batch=64         1.034 ms +- 0.049  (16.1 us/img)  issue 0.163 ms
+step  cuda im2col        batch=256        3.607 ms +- 0.073  (14.1 us/img)  issue 0.634 ms
+step  cuda gemm          batch=16         1.092 ms +- 0.058  (68.3 us/img)  issue 0.052 ms
+step  cuda gemm          batch=64         3.422 ms +- 0.095  (53.5 us/img)  issue 0.171 ms
+step  cuda gemm          batch=256       13.397 ms +- 0.103  (52.3 us/img)  issue 0.699 ms
+step  cuda caffe         batch=16         1.348 ms +- 0.075  (84.3 us/img)  issue 0.081 ms
+step  cuda caffe         batch=64         4.381 ms +- 0.081  (68.4 us/img)  issue 0.330 ms
+step  cuda caffe         batch=256       17.288 ms +- 0.151  (67.5 us/img)  issue 1.317 ms
+done in 136.0 s -> /kaggle/working/results/kaggle/c_cuda2_20261125_050209

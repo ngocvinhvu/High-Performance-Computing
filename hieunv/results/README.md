@@ -16,6 +16,8 @@ tài liệu tham khảo ở [`../REFERENCES.md`](../REFERENCES.md).
 | `analysis` | Phân tích | Bảng số (`tables.md`, `mem_tables.md`) và Hình 7–10, sinh bởi `../code/analyze.py` và `../code/analyze_mem.py`; xem `../ANALYSIS.md` |
 | `kaggle/bw{1,2,3}_20261122_095300` | Kiểm chứng | Đo băng thông độc lập, FC nhiều vector, tách im2col/GEMM (`bw.csv`, `fcb.csv`, `step.csv`); dự đoán ở `../PREDICTIONS.md` |
 | `kaggle/lscpu_20261122_095300.txt` | Kiểm chứng | Thông tin CPU của máy ảo Kaggle (2 nhân × 2 luồng, L3 38,5 MB) |
+| `kaggle/c_cuda{1,2,3}_20261125_050209` | **Chính thức (bản không thư viện)** | C tuần tự (CPU) và CUDA tự viết (GPU T4) trên cùng máy Kaggle, 3 lần chạy (GPU 30 lần tính giờ, CPU 10). Mỗi thư mục có `conv.csv`, `fc.csv`, `bw.csv`, `fcb.csv`, `step.csv`, `env_seq.json`, `env_cuda.json`, log, `build_*.txt`, `gpu_clocks.csv`. Bảng số: `analysis/c_cuda_tables.md` (sinh bởi `../code/analyze_c_cuda.py`); đối chiếu dự đoán: `../PLAN_C_CUDA.md` mục 6 |
+| `kaggle/lscpu_c_cuda_20261125_050209.txt` | Kiểm chứng | Thông tin CPU của máy Kaggle trong phiên chạy bản C/CUDA (Xeon 2,0 GHz, 4 vCPU, có AVX-512) |
 | `paper_digitized.csv` | Số liệu bài báo | Điểm đọc từ Hình 1–4 của bài báo, kèm sai số đọc |
 | `kaggle/run_kaggle_20261121_074742` | **Cũ** | 1 lần chạy, 10 lần đo. Cột CPU của `batched` và `conv2d` sai (tính cả chi phí cấp phát bộ nhớ); thời gian GPU bị ảnh hưởng bởi xung nhịp |
 | `laptop/run_trial_balanced` | **Cũ** | Chạy thử, có cùng lỗi cấp phát, matvec bị nhiễu (52,5 ms ở n=16384, bản chính là 38,4 ms) |
