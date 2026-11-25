@@ -41,8 +41,8 @@ pipeline/tensor parallel và các phương pháp tối ưu phân tán đều đ�
 | Mục của bài báo | Nhận định của bài | Ai kiểm chứng | Mã song song |
 |---|---|---|---|
 | §2 Model parallelism | Chỉ dùng khi mô hình không vừa một máy | [`vinhvn/`](vinhvn/) | CUDA, nhiều GPU |
-| §3 CPU so với GPU: conv | Thời gian tuyến tính theo batch, GPU nhanh hơn khoảng 40 lần | [`tuannn/`](tuannn/) (E2), [`thinhnd/`](thinhnd/) (T6), [`hieunv/`](hieunv/) (đối chứng PyTorch) | CUDA, OpenMP |
-| §3 CPU so với GPU: FC | Ma trận–vector O(n²), speedup tăng theo n | [`thinhnd/`](thinhnd/) (T6), [`hieunv/`](hieunv/) | CUDA |
+| §3 CPU so với GPU: conv | Thời gian tuyến tính theo batch, GPU nhanh hơn khoảng 40 lần | [`hieunv/`](hieunv/), [`tuannn/`](tuannn/) (E2), [`thinhnd/`](thinhnd/) (T6) | CUDA, OpenMP |
+| §3 CPU so với GPU: FC | Ma trận–vector O(n²), speedup tăng theo n | [`hieunv/`](hieunv/), [`thinhnd/`](thinhnd/) (T6) | CUDA |
 | §5.1 Sync SGD, strong scaling | Đồng bộ cho cùng kết quả như tuần tự | [`tuannn/`](tuannn/) (E4), [`thinhnd/`](thinhnd/) (T7) | MPI, CUDA |
 | §5.1.1 Parallel SGD, ShuffleSGD | Cần trộn dữ liệu vì hàm loss không lồi | [`tuannn/`](tuannn/) (E5) | MPI |
 | §5.1.2 ADMM.SGD | Đồng bộ qua parameter server | [`tuannn/`](tuannn/) (E5) | MPI |
@@ -54,7 +54,7 @@ pipeline/tensor parallel và các phương pháp tối ưu phân tán đều đ�
 | Thư mục | Thành viên | Tài khoản | Phần việc |
 |---|---|---|---|
 | [`vinhvn/`](vinhvn/) | (điền) | (điền) | Model parallelism: pipeline (GPipe) và tensor parallelism (kiểu Megatron) trên 4× H100, GEMM và all-reduce tự viết |
-| [`hieunv/`](hieunv/) | (điền) | (điền) | Đo lại §3 bằng PyTorch trên T4 và laptop: conv theo batch, matvec theo n, băng thông bộ nhớ |
+| [`hieunv/`](hieunv/) | (điền) | (điền) | Đo lại §3 bằng C tuần tự và CUDA tự viết trên Kaggle T4: conv kiểu Caffe theo batch, matvec theo n, GEMM, băng thông bộ nhớ; bản PyTorch giữ làm mốc tham khảo |
 | [`tuannn/`](tuannn/) | Tuan Nguyen | [tuannt2906](https://github.com/tuannt2906) | CNN tự cài bằng C/MPI/OpenMP/CUDA: Sync SGD, Parallel SGD, ADMM, Downpour, 6 thuật toán allreduce |
 | [`thinhnd/`](thinhnd/) | Nguyen Duc Thinh | [ducthinhh1002](https://github.com/ducthinhh1002) | CNN tự viết bằng C/MPI/CUDA trên RTX 4060: thời gian tới cùng accuracy, ảnh hưởng của gradient trễ |
 | [`ltnaphixay/`](ltnaphixay/) | LATTANA APHIXAY | [infinityrbx](https://github.com/infinityrbx) | SGD song song dữ liệu trên CUDA với allreduce tự viết: 2× T4 (PCIe), 4× A100 (NVLink so với qua host) |
@@ -72,7 +72,7 @@ thí nghiệm nằm trong `README.md` của từng thư mục.
 | `tuannn` | gcc, make | CMake, MPI (OpenMPI/MPICH), OpenMP; CUDA tuỳ chọn | i5-12600K + RTX 2060, WSL2, OpenMPI 4.1.6, CUDA 12.0 |
 | `thinhnd` | gcc | MPI (MS-MPI), CUDA Toolkit (NVRTC) | Windows 11, i7-13620H + RTX 4060, CUDA 12.8 |
 | `ltnaphixay` | gcc, make | CUDA Toolkit, ≥ 2 GPU NVIDIA | Kaggle 2× T4, RunPod 4× A100 SXM |
-| `hieunv` | – | Python 3.12+, PyTorch | Kaggle T4, laptop Ryzen 7 5800H |
+| `hieunv` | gcc, make | CUDA Toolkit (nvcc), 1 GPU NVIDIA | Kaggle T4 + Xeon 2,0 GHz, gcc 13.3, nvcc 13.0 |
 
 ### `vinhvn/`: model parallelism (C và CUDA)
 
@@ -140,10 +140,26 @@ make simcheck                                      # kiểm tra tree/ring/rd b�
 ./bin/bench_allreduce --method ring --gpus 2 [--check-only]
 ```
 
-### `hieunv/`: đo lại §3 bằng PyTorch (đối chứng)
+### `hieunv/`: đo lại §3, CPU so với GPU (C và CUDA)
 
-Phần này không có mã C/CUDA tự viết; nó dùng PyTorch làm phép đo đối chứng cho §3. Cách chạy trên laptop và Kaggle ở
-[`hieunv/README.md`](hieunv/README.md) (`code/run_all.py`, `code/run_session.py`, notebook trong `kaggle/`).
+Mã nằm trong [`hieunv/c_cuda/`](hieunv/c_cuda/): `bench_seq.c` (C, một luồng, không BLAS/OpenMP) và `bench_cuda.cu` (kernel CUDA tự
+viết, không cuBLAS/cuDNN). Mỗi chương trình kiểm tra mọi kernel so với float64 trước khi đo, sai thì thoát với mã 1.
+
+```bash
+cd hieunv/c_cuda
+make seq                                   # bản tuần tự  -> ./bench_seq
+make cuda ARCH=sm_75                       # bản song song -> ./bench_cuda   (T4: sm_75)
+make check                                 # chạy phần kiểm tra tính đúng
+
+./bench_seq  --check-only
+./bench_seq  --machine laptop --outdir ../results/laptop/seq_quick --quick
+./bench_cuda --check-only
+./bench_cuda --machine kaggle --outdir ../results/kaggle/c_cuda1 --order-seed 1 --repeat 30
+```
+
+Trên Kaggle: import [`hieunv/kaggle/hpc_c_cuda_kaggle.ipynb`](hieunv/kaggle/hpc_c_cuda_kaggle.ipynb), chọn GPU T4, Run All
+(biên dịch, in `ldd` để thấy không liên kết thư viện, kiểm tra, rồi 3 lần đo). Bản PyTorch đo trước đó nằm trong `hieunv/code/`,
+chỉ để tham khảo.
 
 ## 4. Kết quả chính
 
@@ -154,11 +170,13 @@ phần, nên chỉ so tỉ lệ (tăng tốc, xu hướng), không so thời gia
 
 | Phép đo | Kết quả | Phần cứng | Nguồn |
 |---|---|---|---|
-| Conv 96×11×11, stride 4, ảnh 224×224: thời gian theo batch | Tuyến tính, R² ≥ 0,998 trên CPU và GPU | nhiều máy | [hieunv](hieunv/README.md), [tuannn E2](tuannn/experiments/results/SUMMARY_dot2.md) |
-| Conv: GPU / CPU 1 luồng (bài báo: khoảng 40×) | **54,5×** ở batch 256 (13,2× so với 12 luồng; 11× nếu tính cả chép dữ liệu) | RTX 2060, i5-12600K | [tuannn E2](tuannn/experiments/results/SUMMARY_dot2.md) |
+| Conv 96×11×11, stride 4, ảnh 224×224: thời gian theo batch | Tuyến tính: R² ≥ 0,999 (CPU) và ≥ 0,9998 (GPU) với C/CUDA tự viết | T4 + Xeon (Kaggle) | [hieunv ANALYSIS §8](hieunv/ANALYSIS.md), [tuannn E2](tuannn/experiments/results/SUMMARY_dot2.md) |
+| Conv: GPU / CPU 1 luồng (bài báo: khoảng 40×) | **23,3×** (22,3–23,3; kiểu Caffe); speedup theo batch 18,6× (batch 1) → 23,1× (batch 256) | T4 + Xeon, C/CUDA tự viết | [hieunv](hieunv/README.md) |
+| | **54,5×** ở batch 256 (13,2× so với 12 luồng; 11× nếu tính cả chép dữ liệu) | RTX 2060, i5-12600K | [tuannn E2](tuannn/experiments/results/SUMMARY_dot2.md) |
 | | **40–56×** ở batch 64–1024; 2,95× ở batch 1 | RTX 4060, i7-13620H | [thinhnd T6](thinhnd/results/t6_layers.md) |
-| | 27,8× (kiểu Caffe); khoảng 14× nếu dùng `nn.Conv2d` | T4 (PyTorch) | [hieunv](hieunv/README.md) |
-| FC (ma trận–vector) theo n | O(n²) trên CPU (số mũ 2,0–2,2); GPU **thua** CPU ở n = 256 (0,43–0,51×), thắng từ n ≥ 512–1024 | RTX 4060; T4 | [thinhnd T6](thinhnd/results/t6_layers.md), [hieunv](hieunv/README.md) |
+| | Tham khảo PyTorch: 27,8× (kiểu Caffe), khoảng 14× nếu dùng `nn.Conv2d` | T4 + Xeon | [hieunv](hieunv/README.md) |
+| FC (ma trận–vector) theo n | O(n²); speedup tăng đều theo n: **1,6× (n = 256) → 23,1× (n = 16384)** với C/CUDA tự viết, chạm khoảng 93–100% băng thông bộ nhớ đo độc lập | T4 + Xeon | [hieunv ANALYSIS §8](hieunv/ANALYSIS.md) |
+| | Ở n = 256 GPU **thua** CPU khi chi phí khởi chạy lớn: 0,51× (thinhnd), 0,43× (PyTorch); thắng từ n ≥ 512–1024 | RTX 4060; T4 | [thinhnd T6](thinhnd/results/t6_layers.md), [hieunv](hieunv/README.md) |
 | Cả mô hình: C tuần tự so với 1 GPU | 33× (CNN), 41× (MLP), 371× (MLP lớn, H = 512) | RTX 4060; T4; H100 | [thinhnd](thinhnd/README.md), [ltnaphixay](ltnaphixay/README.md), [vinhvn](vinhvn/README.md) |
 
 **Kết luận:** xu hướng của bài đúng (tuyến tính theo batch, speedup tăng theo batch và theo n). Con số "40×" không phải hằng số: nó
@@ -207,6 +225,7 @@ Mỗi phần so bản song song với bản tuần tự trước khi đo hiệu 
 | `vinhvn` | 12 cấu hình pipeline/tensor so với C tuần tự; C tuần tự so với PyTorch autograd (fp64) | Sai số tương đối của loss ≤ 8·10⁻⁹, của chuẩn gradient ≤ 1,4·10⁻⁸ ([`check.log`](vinhvn/results/check.log)) |
 | `tuannn` | CTest, gradient check, CUDA so với CPU, sync SGD so với tuần tự | 105 kiểm tra, 0 lỗi; sync k = 2/4 lệch tuần tự 5,7·10⁻⁸ / 2,9·10⁻⁸ |
 | `thinhnd` | Sai phân hữu hạn; CUDA so với C | Lệch tối đa 8,9·10⁻⁷; CUDA lệch C 1,8·10⁻⁷ |
+| `hieunv` | Mọi kernel C và CUDA so với tham chiếu float64 trên CPU (cạnh ô, K lớn hơn một khối, `im2col` so từng bit, đuôi của phép rút gọn) trước khi đo | Kiểm tra chạy trước mỗi lần đo và dừng chương trình (mã 1) nếu sai; cả 3 lần đo chính thức đều chạy xong |
 | `ltnaphixay` | `simcheck` 5.670 lần chạy với thứ tự stream ngẫu nhiên; so 2 GPU với 1 GPU qua 10 epoch | Các bản sao tham số giống nhau từng bit; loss lệch tối đa 2,3·10⁻⁵ |
 
 ## 6. Giới hạn chung
@@ -215,7 +234,7 @@ Mỗi phần so bản song song với bản tuần tự trước khi đo hiệu 
 - **Mô hình và dữ liệu nhỏ** (LeNet, CNN nhỏ, MLP) ở các phần song song dữ liệu: truyền thông tương đối rẻ, kết luận có thể khác với mô hình lớn.
 - **Số lần lặp ít** (1–5 lần mỗi cấu hình tuỳ phần); chênh lệch vài phần trăm chưa đủ để kết luận.
 - **Phần dùng thư viện:**
-  - `hieunv/` đo bằng PyTorch, chỉ dùng làm đối chứng cho §3.
+  - `hieunv/code/` (PyTorch) chỉ là mốc tham khảo; số chính thức của `hieunv/` lấy từ bản C/CUDA tự viết trong `hieunv/c_cuda/`.
   - `tuannn/` có thêm các lựa chọn cuBLAS (`--impls cublas`) và `MPI_Allreduce` (`--allreduce mpi`) để so sánh với bản tự viết. Phép
     đo strong scaling E4 dùng `--allreduce mpi`. Trung bình tham số khi đánh giá Parallel SGD (`strategy_psgd.c`) cũng gọi thẳng
     `MPI_Allreduce`. Các thuật toán allreduce tự viết (ring, tree, recursive doubling, naive) được đo riêng ở E3.
@@ -233,7 +252,7 @@ Giới hạn riêng của từng phần nằm ở mục "Giới hạn" trong REA
 ├── tuannn/          §3 + §5: code/ (sequential/, src/, apps/), experiments/ (PLAN.md, results/), report/, slides/
 ├── thinhnd/         §3 + §5: cnn/src/{seq,mpi,cuda}/, results/ (t1–t8)
 ├── ltnaphixay/      §5 truyền thông đa GPU: src/{seq,cuda,allreduce}/, bench/, tests/, runs/, docs/report/
-└── hieunv/          §3 đối chứng PyTorch: code/, kaggle/, results/, ANALYSIS.md
+└── hieunv/          §3 CPU so với GPU: c_cuda/ (bench_seq.c, bench_cuda.cu), code/ (PyTorch tham khảo), kaggle/, results/, ANALYSIS.md
 ```
 
 Mỗi thư mục có `README.md` riêng gồm mục tiêu, cách chạy, kết quả và giới hạn. Log và dữ liệu gốc (CSV, JSON, log) nằm cạnh bản tổng hợp.
