@@ -19,10 +19,10 @@
 Bài của Hegde và Usmani nêu ba nhóm nhận định: (i) GPU nhanh hơn CPU khoảng 40 lần ở lớp conv và lớp kết nối đầy đủ, và tỉ lệ này tăng
 theo batch và theo kích thước ma trận (§3, đo bằng Caffe); (ii) chi phí truyền thông và độ chính xác của các phương pháp cập nhật
 trọng số phân tán Parallel SGD, ADMM và Downpour SGD (§5, chỉ phân tích lý thuyết); (iii) chia mô hình (model parallelism) chỉ nên
-dùng khi mô hình không vừa một máy (§2, không đo). Nhóm cài đặt lại từ đầu bằng C, MPI và CUDA, không dùng cuBLAS, cuDNN, NCCL hay
-framework học sâu, rồi đo trên sáu cấu hình phần cứng, từ laptop tới 4× H100.
+dùng khi mô hình không vừa một máy (§2, không đo). Nhóm 10 cài đặt lại từ đầu bằng C, MPI và CUDA, không dùng cuBLAS, cuDNN, NCCL hay
+framework học sâu, rồi đo trên năm cấu hình phần cứng, từ laptop tới 4× H100.
 
-Kết quả chính:
+Kết quả chính của nhóm:
 
 1. **§3 đúng về xu hướng, không đúng về hằng số.** Thời gian conv tuyến tính theo batch (R² ≥ 0,999). Với kernel tự viết, GPU T4 nhanh
    hơn CPU một luồng **23,3×** ở lớp conv của bài và **23,1×** ở phép nhân ma trận–vector n = 16384; trên RTX 4060, với một lớp conv
@@ -52,8 +52,9 @@ nhiều đơn vị tính** (nhân CPU, GPU, tiến trình MPI) và đo xem đư�
   theo cách nào (đồng bộ hay bất đồng bộ, gộp gradient hay gộp tham số) và chi phí truyền thông là bao nhiêu.
 - **Song song mô hình:** chia chính mô hình ra nhiều GPU khi mô hình không vừa bộ nhớ một GPU.
 
-Mỗi thành viên phụ trách một phần của bài báo (bảng ở đầu báo cáo) và có **một bản tuần tự bằng C** và **một bản song song bằng
-MPI và/hoặc CUDA** của cùng một bài toán. Bản tuần tự vừa là mốc đo tăng tốc vừa là chuẩn để kiểm tra bản song song tính đúng.
+Nhóm chia đề tài thành năm cấu hình thí nghiệm, ký hiệu **A–E** (bảng ở mục 4). Mỗi cấu hình có **một bản tuần tự bằng C** và **một
+bản song song bằng MPI và/hoặc CUDA** của cùng một bài toán. Bản tuần tự vừa là mốc đo tăng tốc vừa là chuẩn để kiểm tra bản song song
+tính đúng.
 
 ## 2. Mô hình toán
 
@@ -67,7 +68,7 @@ L_i(w) = −f_{y_i} + log Σ_j exp(f_j)
 w ← w − α · (1/m) Σ_{i∈M} ∇_w L_i(w)
 ```
 
-Một số phần dùng thêm momentum: `v ← μv + ∇L_M(w)`, `w ← w − αv`.
+Một số thí nghiệm dùng thêm momentum: `v ← μv + ∇L_M(w)`, `w ← w − αv`.
 
 **Tính tương đương của song song dữ liệu đồng bộ.** Chia `M` thành `k` phần `M_1, …, M_k` có cùng kích thước, mỗi tiến trình `r`
 tính `g_r = (1/|M_r|) Σ_{i∈M_r} ∇L_i`. Khi đó `(1/k) Σ_r g_r = ∇L_M`, tức Sync SGD trên `k` tiến trình **bằng đúng** SGD tuần tự với
@@ -123,34 +124,34 @@ trên `T` GPU. Mỗi GPU giữ `1/T` trọng số và tính `ReLU(X·W₁⁽ʳ�
 
 ### 3.1 Bản tuần tự
 
-| Phần | Chương trình | Mô hình, dữ liệu |
+| Cấu hình | Chương trình tuần tự | Mô hình, dữ liệu |
 |---|---|---|
-| `vinhvn` | `src/mlp_seq.c` | Chồng `L` khối MLP có residual, dữ liệu tổng hợp sinh bằng hàm băm splitmix64 (CPU và GPU sinh ra đúng cùng giá trị) |
-| `hieunv` | `c_cuda/bench_seq.c` | Lớp conv của bài (im2col + GEMM chia khối), ma trận–vector, GEMM, đo băng thông |
-| `tuannn` | `code/sequential/seq_train.c` | LeNet trên MNIST (61.706 tham số); CNN trên CIFAR-10 |
-| `thinhnd` | `cnn/src/seq/train_seq.c` | CNN 54.314 tham số trên Fashion-MNIST |
-| `ltnaphixay` | `src/seq/mlp_seq.c` | MLP 784–512–10 (407.050 tham số) trên MNIST |
+| A | `mlp_seq.c` | Chồng `L` khối MLP có residual, dữ liệu tổng hợp sinh bằng hàm băm splitmix64 (CPU và GPU sinh ra đúng cùng giá trị) |
+| B | `bench_seq.c` | Lớp conv của bài (im2col + GEMM chia khối), ma trận–vector, GEMM, đo băng thông |
+| C | `seq_train.c` | LeNet trên MNIST (61.706 tham số); CNN trên CIFAR-10 |
+| D | `train_seq.c` | CNN 54.314 tham số trên Fashion-MNIST |
+| E | `mlp_seq.c` | MLP 784–512–10 (407.050 tham số) trên MNIST |
 
 Mọi bản tuần tự là C một luồng, chỉ dùng thư viện chuẩn, được viết sao cho thứ tự mẫu, khởi tạo và luật cập nhật giống nhánh
-tương ứng của bản song song.
+tương ứng của bản song song. Đường dẫn đầy đủ của mã nguồn ở Phụ lục A.
 
 ### 3.2 Kernel tính toán tự viết
 
-- **GEMM trên CPU** (`hieunv`, `tuannn`): bậc thang tối ưu từ ba vòng lặp `i-j-k` (1,4 GFLOP/s), đổi thứ tự vòng lặp `i-k-j` (13–21),
-  tới chia khối theo cache với một ô C giữ trong thanh ghi (28–34 GFLOP/s). Chia khối nhanh hơn bản naive tới 25× ở N = 1024 vì dùng lại
-  dữ liệu trong cache, không phải vì ít phép tính hơn.
-- **GEMM trên GPU:** đi theo cùng bậc thang naive → tile trong shared memory → chia khối thanh ghi. Bản của `hieunv` (mỗi block một ô
-  48 hoặc 64 × 64, mỗi luồng 12–16 tổng trong thanh ghi) đạt trên T4: naive 453 → shared memory 605 → chia khối thanh ghi 1.806
-  GFLOP/s. Bản của `vinhvn` (ô 64×64, mỗi luồng 4×4 phần tử, lát K = 16 trong shared memory, ba biến thể A·B, Aᵀ·B, A·Bᵀ từ một template)
-  đạt 23,8 TFLOP/s trên H100, khoảng 45% cuBLAS. `ltnaphixay` dùng GEMM tile trong shared memory (`k_matmul_tiled`), chiếm 94,5–95,5%
-  thời gian kernel của một bước huấn luyện.
-- **im2col** một kernel, mỗi luồng một phần tử; conv Caffe trên GPU là 2 lần khởi chạy kernel mỗi ảnh.
-- **Ma trận–vector trên GPU** (`hieunv`): mỗi warp một hàng, đọc `float4` liên tiếp, cộng dồn bằng warp shuffle, để đọc bộ nhớ liền mạch.
+- **GEMM trên CPU:** bậc thang tối ưu từ ba vòng lặp `i-j-k` (1,4 GFLOP/s), đổi thứ tự vòng lặp `i-k-j` (13–21), tới chia khối theo
+  cache với một ô C giữ trong thanh ghi (28–34 GFLOP/s) (cấu hình B). Chia khối nhanh hơn bản naive tới 25× ở N = 1024 vì dùng lại dữ
+  liệu trong cache, không phải vì ít phép tính hơn (cấu hình C).
+- **GEMM trên GPU:** đi theo cùng bậc thang naive → tile trong shared memory → chia khối thanh ghi. Ở cấu hình B (mỗi block một ô 48
+  hoặc 64 × 64, mỗi luồng 12–16 tổng trong thanh ghi), trên T4: naive 453 → shared memory 605 → chia khối thanh ghi 1.806 GFLOP/s. Ở
+  cấu hình A (ô 64×64, mỗi luồng 4×4 phần tử, lát K = 16 trong shared memory, ba biến thể A·B, Aᵀ·B, A·Bᵀ từ một template), đạt 23,8
+  TFLOP/s trên H100, khoảng 45% cuBLAS. Ở cấu hình E, GEMM tile trong shared memory (`k_matmul_tiled`) chiếm 94,5–95,5% thời gian
+  kernel của một bước huấn luyện.
+- **im2col** một kernel, mỗi luồng một phần tử; conv kiểu Caffe trên GPU là 2 lần khởi chạy kernel mỗi ảnh.
+- **Ma trận–vector trên GPU:** mỗi warp một hàng, đọc `float4` liên tiếp, cộng dồn bằng warp shuffle, để đọc bộ nhớ liền mạch.
 
 ### 3.3 Song song dữ liệu bằng MPI
 
-`tuannn` cài bốn phương pháp của §5 trên cùng một mã nguồn. Toàn bộ tham số và gradient nằm trong **một mảng phẳng**, nên đồng bộ
-chỉ là một lời gọi allreduce trên một vùng nhớ liên tục.
+Ở cấu hình C, bốn phương pháp của §5 được cài trên cùng một mã nguồn. Toàn bộ tham số và gradient nằm trong **một mảng phẳng**, nên
+đồng bộ chỉ là một lời gọi allreduce trên một vùng nhớ liên tục.
 
 | Phương pháp | Thuật toán | Truyền thông |
 |---|---|---|
@@ -163,15 +164,15 @@ Sáu thuật toán allreduce được viết trên giao tiếp điểm–điểm
 (driver trung tâm), cùng `MPI_Reduce + MPI_Bcast` và `MPI_Allreduce` của thư viện để so sánh. Mọi thuật toán tự viết cho kết quả
 trùng từng bit trên mọi rank.
 
-`thinhnd` cài ba chế độ trong `train_mpi.c`: **sync** (chia mini-batch, cộng gradient bằng cây nhị thức tự viết, `n/b` vòng mỗi
-epoch, mỗi vòng `O(P log p)`), **avg** (mỗi rank chạy SGD trên phần của mình, lấy trung bình tham số cuối epoch) và **async** (rank 0 là
+Ở cấu hình D, chương trình MPI có ba chế độ: **sync** (chia mini-batch, cộng gradient bằng cây nhị thức tự viết, `n/b` vòng mỗi epoch,
+mỗi vòng `O(P log p)`), **avg** (mỗi rank chạy SGD trên phần của mình, lấy trung bình tham số cuối epoch) và **async** (rank 0 là
 parameter server, worker không chờ nhau). Bản CUDA cho mỗi luồng tính một phần tử đầu ra; gradient của conv tính theo từng map rồi
-rút gọn. Để nghiên cứu độ trễ một cách tất định, `train_cuda --delay d` áp gradient tính ở bước `t` vào bước `t + d`.
+rút gọn. Để nghiên cứu độ trễ một cách tất định, tùy chọn `--delay d` áp gradient tính ở bước `t` vào bước `t + d`.
 
 ### 3.4 Song song dữ liệu trên nhiều GPU với allreduce tự viết
 
-`ltnaphixay` chạy SGD đồng bộ trên `k` GPU trong một tiến trình. Mỗi GPU một stream; gradient được lấy trung bình bằng một trong
-các thuật toán sau, mỗi thuật toán một tệp trong `src/allreduce/`:
+Ở cấu hình E, SGD đồng bộ chạy trên `k` GPU trong một tiến trình. Mỗi GPU một stream; gradient được lấy trung bình bằng một trong các
+thuật toán sau, mỗi thuật toán một tệp riêng:
 
 | Phương pháp | Cách hoạt động |
 |---|---|
@@ -186,7 +187,7 @@ cập trực tiếp giữa GPU, buộc mọi lần chép đi qua bộ nhớ host
 
 ### 3.5 Song song mô hình trên nhiều GPU
 
-`vinhvn` cài hai chế độ trong `src/mlp_cuda.cu`:
+Cấu hình A có hai chế độ:
 
 - **Pipeline (lịch GPipe).** `L` khối chia thành `S` stage liên tiếp, mỗi stage một GPU; batch chia thành `M` micro-batch. Activation
   ở forward và gradient ở backward chuyển giữa các stage bằng `cudaMemcpyPeerAsync`; phụ thuộc giữa các stage được biểu diễn bằng
@@ -198,27 +199,27 @@ cập trực tiếp giữa GPU, buộc mọi lần chép đi qua bộ nhớ host
 
 Mọi phép đo hiệu năng chỉ chạy sau khi bản song song đã khớp bản tuần tự:
 
-| Phần | Kiểm tra | Kết quả |
+| Cấu hình | Kiểm tra | Kết quả |
 |---|---|---|
-| `vinhvn` | 12 cấu hình (pipeline S = 1, 2, 4 × M = 1, 2, 4, 8; tensor T = 1, 2, 4) so với C tuần tự; C tuần tự so với autograd fp64 | Sai số tương đối của loss ≤ 8·10⁻⁹, của chuẩn gradient ≤ 1,4·10⁻⁸ |
-| `hieunv` | Mọi kernel C và CUDA so với tham chiếu float64: ô ở mép tile, K lớn hơn một khối, `im2col` so từng bit, đuôi của phép rút gọn | Chạy trước mỗi lần đo; sai thì chương trình dừng với mã 1 |
-| `tuannn` | 13 CTest, gradient so với sai phân hữu hạn, CUDA so với CPU, Sync SGD so với tuần tự | 105 kiểm tra, 0 lỗi; Sync k = 2/4 lệch tuần tự 5,7·10⁻⁸ / 2,9·10⁻⁸ |
-| `thinhnd` | Gradient so với sai phân hữu hạn; CUDA so với C | Lệch tối đa 8,9·10⁻⁷; CUDA lệch C 1,8·10⁻⁷ |
-| `ltnaphixay` | `simcheck`: 5.670 lần chạy trên CUDA giả lập với thứ tự stream ngẫu nhiên, k = 2..8; 2 GPU so với 1 GPU qua 10 epoch | Các bản sao tham số giống nhau từng bit; loss lệch tối đa 2,3·10⁻⁵ |
+| A | 12 cấu hình (pipeline S = 1, 2, 4 × M = 1, 2, 4, 8; tensor T = 1, 2, 4) so với C tuần tự; C tuần tự so với autograd fp64 | Sai số tương đối của loss ≤ 8·10⁻⁹, của chuẩn gradient ≤ 1,4·10⁻⁸ |
+| B | Mọi kernel C và CUDA so với tham chiếu float64: ô ở mép tile, K lớn hơn một khối, `im2col` so từng bit, đuôi của phép rút gọn | Chạy trước mỗi lần đo; sai thì chương trình dừng với mã 1 |
+| C | 13 CTest, gradient so với sai phân hữu hạn, CUDA so với CPU, Sync SGD so với tuần tự | 105 kiểm tra, 0 lỗi; Sync k = 2/4 lệch tuần tự 5,7·10⁻⁸ / 2,9·10⁻⁸ |
+| D | Gradient so với sai phân hữu hạn; CUDA so với C | Lệch tối đa 8,9·10⁻⁷; CUDA lệch C 1,8·10⁻⁷ |
+| E | 5.670 lần chạy trên CUDA giả lập với thứ tự stream ngẫu nhiên, k = 2..8; 2 GPU so với 1 GPU qua 10 epoch | Các bản sao tham số giống nhau từng bit; loss lệch tối đa 2,3·10⁻⁵ |
 
 ## 4. Thực nghiệm
 
-| Phần | Phần cứng | Phần mềm | Lặp lại |
-|---|---|---|---|
-| `vinhvn` | 4× NVIDIA H100 80GB, một node | CUDA 12.4, FP32 (không Tensor Core) | 1 lần chạy mỗi cấu hình, 3 bước đo sau 1 bước khởi động |
-| `hieunv` | Kaggle: Tesla T4 + Xeon 2,0 GHz | gcc 13.3, nvcc 13.0 | 3 lần chạy; GPU 30, CPU 10 lần tính giờ mỗi điểm; thứ tự kích thước xáo trộn |
-| `tuannn` | Đợt 1: i5-8257U (4 nhân). Đợt 2: i5-12600K + RTX 2060 | Đợt 2: WSL2, GCC 13.3, OpenMPI 4.1.6, CUDA 12.0 | E4: 3 lần chạy; E5: 2 seed; E1–E3: 3 lần × 5–20 lần đo |
-| `thinhnd` | i7-13620H + RTX 4060 Laptop | Windows 11, GCC 16.2, MS-MPI 10.1, CUDA 12.8 | 3–10 lần chạy hoặc seed tùy thí nghiệm |
-| `ltnaphixay` | Kaggle 2× T4 (PCIe); RunPod 4× A100 SXM (NVLink) | CUDA 13.0 (T4) | 3 lần chạy mỗi cấu hình, báo trung vị |
+| Cấu hình | Nội dung | Phần cứng | Phần mềm | Lặp lại |
+|---|---|---|---|---|
+| **A** | Song song mô hình (§2) | 4× NVIDIA H100 80GB, một node | CUDA 12.4, FP32 (không Tensor Core) | 1 lần chạy mỗi cấu hình, 3 bước đo sau 1 bước khởi động |
+| **B** | Kernel CPU so với GPU (§3) | Kaggle: Tesla T4 + Xeon 2,0 GHz | gcc 13.3, nvcc 13.0 | 3 lần chạy; GPU 30, CPU 10 lần tính giờ mỗi điểm; thứ tự kích thước xáo trộn |
+| **C** | CNN phân tán trên MPI, 4 phương pháp của §5, 6 thuật toán allreduce | Đợt 1: i5-8257U (4 nhân). Đợt 2: i5-12600K + RTX 2060 | Đợt 2: WSL2, GCC 13.3, OpenMPI 4.1.6, CUDA 12.0 | 3 lần chạy (scaling), 2 seed (độ chính xác), 3 × 5–20 lần đo (allreduce) |
+| **D** | CNN trên MPI và CUDA: thời gian tới cùng độ chính xác, gradient trễ | i7-13620H + RTX 4060 Laptop | Windows 11, GCC 16.2, MS-MPI 10.1, CUDA 12.8 | 3–10 lần chạy hoặc seed tùy thí nghiệm |
+| **E** | SGD song song dữ liệu trên nhiều GPU, allreduce tự viết | Kaggle 2× T4 (PCIe); RunPod 4× A100 SXM (NVLink) | CUDA 13.0 (T4) | 3 lần chạy mỗi cấu hình, báo trung vị |
 
-Quy trình chung: ghi **dự đoán trước khi chạy** (`PLAN.md`, `PREDICTIONS.md`, `PLAN_C_CUDA.md` của từng phần), lưu log và CSV/JSON gốc
-cạnh bảng tổng hợp, ghi điều kiện máy (xung nhịp GPU, power plan) cùng kết quả. Phần cứng khác nhau giữa các phần, nên báo cáo chỉ so
-**tỉ lệ** (tăng tốc, xu hướng) giữa các phần, không so thời gian tuyệt đối.
+Quy trình chung: ghi **dự đoán trước khi chạy**, lưu log và CSV/JSON gốc cạnh bảng tổng hợp, ghi điều kiện máy (xung nhịp GPU, power
+plan) cùng kết quả. Phần cứng khác nhau giữa các cấu hình, nên báo cáo chỉ so **tỉ lệ** (tăng tốc, xu hướng) giữa các cấu hình, không
+so thời gian tuyệt đối.
 
 ## 5. Kết quả
 
@@ -226,18 +227,18 @@ cạnh bảng tổng hợp, ghi điều kiện máy (xung nhịp GPU, power plan
 
 ![Tỉ lệ thời gian CPU/GPU của lớp conv theo batch](figures/h1_conv_speedup.png)
 
-*Hình 1. Lớp conv đầu của bài. Đường xanh: bản C tuần tự / bản CUDA tự viết (hieunv), Kaggle T4 + Xeon, trung vị 3 lần chạy, vùng
-tô là khoảng của 3 lần. Đường cam: điểm đọc từ Hình 2 của bài (Caffe, K520 so với Xeon E5-2670). Vẽ bằng `report/make_figures.py`.*
+*Hình 1. Lớp conv đầu của bài, cấu hình B. Đường xanh: bản C tuần tự / bản CUDA tự viết trên T4 + Xeon, trung vị 3 lần chạy, vùng tô
+là khoảng của 3 lần. Đường cam: điểm đọc từ Hình 2 của bài (Caffe, K520 so với Xeon E5-2670). Vẽ bằng `report/make_figures.py`.*
 
-| Phép đo | Kết quả | Phần cứng | Nguồn |
-|---|---|---|---|
-| Conv: thời gian theo batch | Tuyến tính, độ dốc 1,46 ms/ảnh (CPU) và 0,0630 ms/ảnh (GPU); R² ≥ 0,999 và ≥ 0,9998 | T4 + Xeon | hieunv |
-| Conv: GPU / CPU 1 luồng (bài: khoảng 40×) | **23,3×** (22,3–23,3); 18,6× ở batch 1, phẳng ở khoảng 23× từ batch 64 | T4 + Xeon | hieunv |
-| | 40,3× ở batch 64, 56,1× ở batch 1024, 2,95× ở batch 1 (lớp conv 8@5×5 trên ảnh 28×28) | RTX 4060 + i7-13620H | thinhnd T6 |
-| | Tham khảo, GPU dùng cuBLAS: 54,5× ở batch 256 (11× nếu tính cả chép dữ liệu) | RTX 2060 + i5-12600K | tuannn E2 |
-| Ma trận–vector theo n | O(n²); tăng đều từ **1,6× (n = 256) lên 23,1× (n = 16384)**; đạt 93% (CPU) và 100% (GPU) băng thông đọc đo độc lập | T4 + Xeon | hieunv |
-| | GPU **thua** CPU ở n = 256 (0,51×), hòa ở n = 512 (1,10×), thắng 8,37× ở n = 4096 | RTX 4060 | thinhnd T6 |
-| Cả mô hình: C tuần tự so với 1 GPU | 33× (CNN), 41× (MLP), 371× (MLP H = 512 trên H100) | RTX 4060; T4; H100 | thinhnd, ltnaphixay, vinhvn |
+| Phép đo | Kết quả | Cấu hình |
+|---|---|---|
+| Conv: thời gian theo batch | Tuyến tính, độ dốc 1,46 ms/ảnh (CPU) và 0,0630 ms/ảnh (GPU); R² ≥ 0,999 và ≥ 0,9998 | B (T4 + Xeon) |
+| Conv: GPU / CPU 1 luồng (bài: khoảng 40×) | **23,3×** (22,3–23,3); 18,6× ở batch 1, phẳng ở khoảng 23× từ batch 64 | B (T4 + Xeon) |
+| | 40,3× ở batch 64, 56,1× ở batch 1024, 2,95× ở batch 1 (lớp conv 8@5×5 trên ảnh 28×28) | D (RTX 4060 + i7-13620H) |
+| | Tham khảo, GPU dùng cuBLAS: 54,5× ở batch 256 (11× nếu tính cả chép dữ liệu) | C (RTX 2060 + i5-12600K) |
+| Ma trận–vector theo n | O(n²); tăng đều từ **1,6× (n = 256) lên 23,1× (n = 16384)**; đạt 93% (CPU) và 100% (GPU) băng thông đọc đo độc lập | B (T4 + Xeon) |
+| | GPU **thua** CPU ở n = 256 (0,51×), hòa ở n = 512 (1,10×), thắng 8,37× ở n = 4096 | D (RTX 4060) |
+| Cả mô hình: C tuần tự so với 1 GPU | 33× (CNN, D), 41× (MLP, E), 371× (MLP H = 512 trên H100, A) | A, D, E |
 
 Nhận xét:
 
@@ -246,39 +247,39 @@ Nhận xét:
   tính.
 - **Speedup tăng theo batch rồi phẳng.** Từ batch 1 đến 16–32 tỉ lệ tăng rõ (18,6× → 22,7×) vì chi phí khởi chạy kernel được chia cho
   nhiều ảnh; sau đó gần như không đổi. Bài báo cũng chỉ tăng khoảng 10% trong khoảng batch 16–256.
-- **Hằng số 40× không lặp lại được, và không phải hằng số.** Trên cùng máy T4, conv C tự viết trên CPU nhanh hơn bản PyTorch (1,46 so
-  với 1,88 ms/ảnh), chủ yếu nhờ im2col viết tay (0,13 so với 0,80 ms/ảnh), còn GPU tự viết gần bằng bản PyTorch (86 nghìn so với 95,5 nghìn chu kỳ/ảnh), nên tỉ lệ thấp hơn bản
-  PyTorch (23,3× so với 27,8×). Trên RTX 4060 (thinhnd) tỉ lệ lên 40–56×. Nhận định đúng là "GPU nhanh hơn một bậc độ lớn ở lớp conv đủ
-  lớn"; con số cụ thể phụ thuộc thiết bị, kích thước lớp và cách cài đặt.
+- **Hằng số 40× không lặp lại được, và không phải hằng số.** Trên cùng máy T4, conv C tự viết trên CPU nhanh hơn bản PyTorch dùng làm
+  mốc tham khảo (1,46 so với 1,88 ms/ảnh), chủ yếu nhờ im2col viết tay (0,13 so với 0,80 ms/ảnh), còn GPU tự viết gần bằng bản PyTorch
+  (86 nghìn so với 95,5 nghìn chu kỳ/ảnh), nên tỉ lệ thấp hơn bản PyTorch (23,3× so với 27,8×). Trên RTX 4060 (cấu hình D) tỉ lệ lên
+  40–56×. Nhận định đúng là "GPU nhanh hơn một bậc độ lớn ở lớp conv đủ lớn"; con số cụ thể phụ thuộc thiết bị, kích thước lớp và cách
+  cài đặt.
 - **Lớp kết nối đầy đủ bị giới hạn bởi băng thông bộ nhớ,** đúng mô hình mục 2.2: matvec đạt 93–100% băng thông đọc đo độc lập, và tỉ lệ
   băng thông GPU/CPU khớp tỉ lệ thời gian. GPU chỉ có lợi khi ma trận đủ lớn và trọng số nằm sẵn trên GPU; với ma trận nhỏ, chi phí
-  khởi chạy kernel khiến GPU có thể thua CPU (0,51× ở n = 256 trên RTX 4060). Bản tự viết của hieunv chỉ một lần khởi chạy nên đã nhanh
-  hơn CPU từ n = 256.
+  khởi chạy kernel khiến GPU có thể thua CPU (0,51× ở n = 256 trên RTX 4060). Kernel matvec ở cấu hình B chỉ một lần khởi chạy nên đã
+  nhanh hơn CPU từ n = 256.
 
 ### 5.2 §5: song song dữ liệu trên CPU bằng MPI
 
 ![Strong scaling của Sync SGD](../tuannn/report/figures/g4_scaling_dot2.png)
 
-*Hình 2. Strong scaling Sync SGD, LeNet/MNIST, batch tổng 256, i5-12600K (tuannn, đợt 2). Trái: tăng tốc, có và không ghim tiến
+*Hình 2. Strong scaling Sync SGD, LeNet/MNIST, batch tổng 256, cấu hình C đợt 2 (i5-12600K). Trái: tăng tốc, có và không ghim tiến
 trình. Phải: thời gian theo pha; vạch đen là thời gian tính toán lý tưởng T₁/k. Phép đo này dùng `MPI_Allreduce` (xem mục 7).*
 
-| k | Tăng tốc (tuannn, LeNet/MNIST) | Phần tính toán so với lý tưởng | k | Tăng tốc (thinhnd, CNN/Fashion-MNIST) | Chờ + truyền |
+| k | Tăng tốc (C: LeNet/MNIST) | Phần tính toán so với lý tưởng | k | Tăng tốc (D: CNN/Fashion-MNIST) | Chờ + truyền |
 |---|---|---|---|---|---|
 | 2 | 1,79× | +10% | 2 | 1,88× | 2,2% |
 | 4 | 2,91× | +33% | 4 | 3,27× | 13,5% |
 | 6 | 3,12× | +67% | 6 | 3,57× | 27,8% |
 | 10 | 3,45× | +148% | | | |
 
-- **Tăng tốc bão hòa ở khoảng 3,5×** trên một máy 6 nhân hiệu năng cao. Ở phần của tuannn, giới hạn **không phải truyền thông**:
-  allreduce chỉ tốn 0,04–0,20 s mỗi epoch, còn phần forward + backward chậm hơn lý tưởng tới 148% ở k = 10 vì các tiến trình tranh băng
-  thông bộ nhớ, bộ đệm L3 và xung nhịp chung. Với mô hình nhỏ hơn và batch chia nhỏ hơn (thinhnd), phần chờ và truyền tăng tới 27,8%
-  ở 6 rank.
+- **Tăng tốc bão hòa ở khoảng 3,5×** trên một máy 6 nhân hiệu năng cao. Ở cấu hình C, giới hạn **không phải truyền thông**: allreduce
+  chỉ tốn 0,04–0,20 s mỗi epoch, còn phần forward + backward chậm hơn lý tưởng tới 148% ở k = 10 vì các tiến trình tranh băng thông bộ
+  nhớ, bộ đệm L3 và xung nhịp chung. Với mô hình nhỏ hơn và batch chia nhỏ hơn (cấu hình D), phần chờ và truyền tăng tới 27,8% ở 6 rank.
 - **Độ chính xác không đổi khi tăng k** (98,9% ở k = 1; 98,9% và 98,8% ở k = 4 và 8 sau 10 epoch), đúng tính tương đương ở mục 2.1.
 
 ![Bốn phương pháp tối ưu phân tán](../tuannn/report/figures/g6_strategies_dot2.png)
 
 *Hình 3. Độ chính xác test sau 10 epoch, 4 và 8 tiến trình, dữ liệu IID (xanh) và shard sắp theo nhãn, tức không IID (cam);
-trung bình 2 seed (tuannn, đợt 2).*
+trung bình 2 seed, cấu hình C đợt 2.*
 
 | Phương pháp (k = 4) | IID | Không IID | Tăng tốc | Byte gửi mỗi rank |
 |---|---|---|---|---|
@@ -296,7 +297,7 @@ trung bình 2 seed (tuannn, đợt 2).*
 - **ADMM** tốt hơn Parallel SGD mỗi epoch khi dữ liệu không IID (88,5% so với 77,7% ở đợt 1), nhưng xấu đi khi k tăng và kém ShuffleSGD.
 - **Downpour chậm nhất** (2,48× ở k = 4) và tốn 34% thời gian cho truyền thông ở k = 8: server là nút thắt, đúng như bài cảnh báo.
 
-**So ở cùng độ chính xác (thinhnd, T8).** So số epoch hoặc tốc độ mỗi epoch dễ gây hiểu lầm, nên thinhnd đo thời gian tới cùng ngưỡng
+**So ở cùng độ chính xác (cấu hình D).** So số epoch hoặc tốc độ mỗi epoch dễ gây hiểu lầm, nên nhóm đo thời gian tới cùng ngưỡng
 validation 85%, 5 seed, learning rate chọn riêng cho từng biến thể và không nằm ở mép lưới:
 
 | Phương pháp (6 rank) | Momentum | Epoch cần | Thời gian tới 85% | Tăng tốc tới ngưỡng | Tăng tốc mỗi epoch |
@@ -312,7 +313,7 @@ validation 85%, 5 seed, learning rate chọn riêng cho từng biến thể và 
 **Đồng bộ nhanh hơn bất đồng bộ** 1,46× (không momentum) và 3,31× (momentum 0,9), ở 5/5 seed. Bất đồng bộ và trung bình tham số nhanh
 hơn mỗi epoch nhưng cần nhiều epoch hơn, nên tới ngưỡng chậm hơn. Momentum giúp bản đồng bộ gấp 2 lần nhưng không giúp bản bất đồng bộ.
 
-**Gradient trễ (thinhnd, T4).** Mô phỏng tất định gradient trễ `d` bước, momentum 0, 15 epoch, 10 seed, với bước hiệu dụng η:
+**Gradient trễ (cấu hình D).** Mô phỏng tất định gradient trễ `d` bước, momentum 0, 15 epoch, 10 seed, với bước hiệu dụng η:
 
 | d | η | d·η | Seed học được (validation > 70%) |
 |---|---|---|---|
@@ -325,16 +326,16 @@ hơn mỗi epoch nhưng cần nhiều epoch hơn, nên tới ngưỡng chậm h�
 | 15 | 0,05 | 0,75 | 1/10 |
 
 Tích `d·η` càng lớn thì càng dễ không học được, nhưng không có ngưỡng sắc (hai ô cùng tích 0,30 cho 9/10 và 7/10). Độ trễ lớn
-(d = 15) vẫn học được nếu bước nhỏ và đủ epoch. Đây là cơ chế khiến bất đồng bộ cần nhiều epoch hơn ở bảng T8.
+(d = 15) vẫn học được nếu bước nhỏ và đủ epoch. Đây là cơ chế khiến bất đồng bộ cần nhiều epoch hơn ở bảng trên.
 
 ### 5.3 §5: chi phí truyền thông trên nhiều GPU
 
 ![Tăng tốc 2 GPU theo kích thước batch](../ltnaphixay/docs/figures/fig1_speedup_vs_batch.png)
 
-*Hình 4. Tăng tốc của 2× T4 so với 1 T4 theo batch toàn cục, MLP 407.050 tham số (gradient 1,63 MB), ba thuật toán allreduce tự viết
-(ltnaphixay). Nhãn trong hình bằng tiếng Anh.*
+*Hình 4. Tăng tốc của 2× T4 so với 1 T4 theo batch toàn cục, MLP 407.050 tham số (gradient 1,63 MB), ba thuật toán allreduce tự viết,
+cấu hình E. Nhãn trong hình bằng tiếng Anh.*
 
-| Cấu hình (2× T4, batch 256) | Epoch ổn định | Tăng tốc | Truyền thông không che được |
+| Cấu hình E (2× T4, batch 256) | Epoch ổn định | Tăng tốc | Truyền thông không che được |
 |---|---|---|---|
 | 1 GPU | 0,199 s | 1,00× | 0,5% |
 | host_ref (qua CPU) | 0,420 s | 0,47× | 74,9% |
@@ -350,7 +351,7 @@ Tích `d·η` càng lớn thì càng dễ không học được, nhưng không c
 
 ![NVLink so với qua host trên 4× A100](../ltnaphixay/docs/figures/fig6_a100_nvlink_vs_host.png)
 
-*Hình 5. Băng thông bus của allreduce theo kích thước thông điệp trên 4× A100 SXM, NVLink so với đi qua bộ nhớ host (ltnaphixay).*
+*Hình 5. Băng thông bus của allreduce theo kích thước thông điệp trên 4× A100 SXM, NVLink so với đi qua bộ nhớ host, cấu hình E.*
 
 | Thông điệp 256 MB, băng thông bus | tree | ring | rd |
 |---|---|---|---|
@@ -365,15 +366,15 @@ Tích `d·η` càng lớn thì càng dễ không học được, nhưng không c
 - **NVLink nhanh hơn đi qua host 12–27 lần** với thông điệp lớn. Ở batch 4096, 4 GPU đạt 1,59× với NVLink nhưng chỉ 1,23–1,33× khi qua
   host. Ở batch 256, thêm GPU vẫn chậm hơn kể cả với NVLink: GPU càng nhanh thì truyền thông càng đắt về tương đối.
 
-Phần MPI trên CPU (tuannn E3, k = 2–10, 16 MiB) cho cùng kết luận: ring nhanh nhất từ k = 4, nhanh hơn cả `MPI_Allreduce` của
-OpenMPI ở k = 10 (33 ms so với 47 ms); naive (driver trung tâm) tăng gần tuyến tính theo k.
+Phần allreduce trên CPU bằng MPI (cấu hình C, k = 2–10, 16 MiB) cho cùng kết luận: ring nhanh nhất từ k = 4, nhanh hơn cả
+`MPI_Allreduce` của OpenMPI ở k = 10 (33 ms so với 47 ms); naive (driver trung tâm) tăng gần tuyến tính theo k.
 
 ### 5.4 §2: song song mô hình
 
 ![Model parallelism trên 4× H100](figures/h2_model_parallel.png)
 
-*Hình 6. MLP 1,07 tỉ tham số (H = 4096, L = 8, B = 2048) trên 4× H100, mốc 1 GPU 553 ms/bước. Trái: tăng tốc của pipeline theo số
-micro-batch, đường chấm là trần bong bóng `S·M/(M+S−1)`. Phải: so ba cách chia (vinhvn). Vẽ bằng `report/make_figures.py`.*
+*Hình 6. MLP 1,07 tỉ tham số (H = 4096, L = 8, B = 2048) trên 4× H100, cấu hình A, mốc 1 GPU 553 ms/bước. Trái: tăng tốc của pipeline
+theo số micro-batch, đường chấm là trần bong bóng `S·M/(M+S−1)`. Phải: so ba cách chia. Vẽ bằng `report/make_figures.py`.*
 
 | Chế độ | GPU | M | Bước (ms) | Tăng tốc | Trần pipeline | Bộ nhớ mỗi GPU | Dữ liệu chuyển mỗi bước |
 |---|---|---|---|---|---|---|---|
@@ -420,22 +421,21 @@ dùng hết băng thông.
 
 - **Một máy cho mỗi phép đo.** MPI chạy trên một node qua shared memory, đa GPU nằm trong một máy. Chưa đo qua mạng giữa nhiều máy,
   nên "băng thông" trong mô hình α–β ở phần MPI thực chất là băng thông bộ nhớ.
-- **Mô hình nhỏ** ở các phần song song dữ liệu (LeNet 61.706 tham số, CNN 54.314 tham số, MLP 407.050 tham số): truyền thông tương đối
-  rẻ, kết luận về tỉ lệ truyền thông có thể khác với mô hình lớn.
-- **Số lần lặp ít:** 1 lần chạy mỗi cấu hình ở phần model parallelism, 2–5 seed ở các thí nghiệm độ chính xác. Chênh lệch vài phần trăm
+- **Mô hình nhỏ** ở các thí nghiệm song song dữ liệu (LeNet 61.706 tham số, CNN 54.314 tham số, MLP 407.050 tham số): truyền thông
+  tương đối rẻ, kết luận về tỉ lệ truyền thông có thể khác với mô hình lớn.
+- **Số lần lặp ít:** 1 lần chạy mỗi cấu hình ở phần song song mô hình, 2–5 seed ở các thí nghiệm độ chính xác. Chênh lệch vài phần trăm
   chưa đủ để kết luận.
-- **Phần còn dùng thư viện:** phép đo strong scaling (Hình 2) của tuannn dùng `MPI_Allreduce`; các thuật toán allreduce tự viết được
-  đo riêng ở E3. Trung bình tham số khi đánh giá Parallel SGD cũng gọi `MPI_Allreduce`. Mã của tuannn có lựa chọn cuBLAS để so sánh;
-  các con số GPU trong báo cáo này lấy từ kernel tự viết. Bản PyTorch trong `hieunv/code/` và `vinhvn/reference_pytorch/` chỉ là mốc
-  tham khảo.
-- **Môi trường không đồng nhất:** phần của tuannn đợt 2 chạy trên WSL2 nên không ghim được P-core/E-core; phần của thinhnd chỉ build
-  trên Windows; T4 trên Kaggle bị giới hạn công suất 70 W nên xung nhịp dao động (đã ghi lại cùng kết quả).
-- **Siêu tham số** chọn một lần cho phần lớn thí nghiệm (trừ T8 của thinhnd), nên so sánh độ chính xác giữa các phương pháp là so cấu
-  hình hợp lý, không phải tốt nhất của mỗi phương pháp.
+- **Phần còn dùng thư viện:** phép đo strong scaling ở cấu hình C (Hình 2) dùng `MPI_Allreduce`; các thuật toán allreduce tự viết được
+  đo riêng. Trung bình tham số khi đánh giá Parallel SGD cũng gọi `MPI_Allreduce`. Mã của cấu hình C có lựa chọn cuBLAS để so sánh; các
+  con số GPU trong báo cáo, trừ dòng ghi "tham khảo", lấy từ kernel tự viết. Các bản PyTorch chỉ dùng làm mốc tham khảo.
+- **Môi trường không đồng nhất:** cấu hình C đợt 2 chạy trên WSL2 nên không ghim được P-core/E-core; cấu hình D chỉ build trên Windows;
+  T4 trên Kaggle bị giới hạn công suất 70 W nên xung nhịp dao động (đã ghi lại cùng kết quả).
+- **Siêu tham số** chọn một lần cho phần lớn thí nghiệm (trừ phép so ở cùng độ chính xác của cấu hình D), nên so sánh độ chính xác giữa
+  các phương pháp là so cấu hình hợp lý, không phải tốt nhất của mỗi phương pháp.
 
 ## 8. Kết luận
 
-Nhóm đã cài đặt lại từ đầu bằng C, MPI và CUDA các thành phần mà bài báo mô tả: kernel conv và nhân ma trận, bốn phương pháp tối ưu
+Nhóm 10 đã cài đặt lại từ đầu bằng C, MPI và CUDA các thành phần mà bài báo mô tả: kernel conv và nhân ma trận, bốn phương pháp tối ưu
 phân tán, sáu thuật toán allreduce trên CPU và ba thuật toán trên GPU, pipeline và tensor parallelism. Mỗi bản song song được chứng
 minh tính đúng so với bản tuần tự trước khi đo. Các nhận định định tính của bài phần lớn đúng (conv tuyến tính theo batch, FC O(n²),
 Parallel SGD cần trộn dữ liệu, model parallelism chỉ để vừa bộ nhớ). Các nhận định định lượng thì không cố định: tỉ lệ GPU/CPU từ dưới
@@ -445,14 +445,22 @@ Hướng tiếp theo:
 
 1. Chạy song song dữ liệu qua mạng giữa nhiều máy để thấy số hạng độ trễ mạng thật trong `O(L·k)`.
 2. Đo điểm bão hòa `T/τ` của Downpour SGD với nhiều worker hơn.
-3. Chạy lại strong scaling của tuannn bằng ring allreduce tự viết thay cho `MPI_Allreduce`.
+3. Chạy lại strong scaling ở cấu hình C bằng ring allreduce tự viết thay cho `MPI_Allreduce`.
 4. Kết hợp song song dữ liệu với pipeline hoặc tensor parallelism trên mô hình lớn hơn, nơi truyền thông và bộ nhớ cùng là giới hạn.
 
-## Phụ lục A. Biên dịch và chạy
+## Phụ lục A. Mã nguồn và cách chạy
 
-Lệnh biên dịch và chạy bản tuần tự và bản song song của từng phần nằm ở [`README.md`](../README.md) mục 3 ở gốc repo, và chi tiết hơn
-trong `README.md` của từng thư mục. Hình 1 và Hình 6 vẽ lại bằng `python3 report/make_figures.py` (cần matplotlib); các hình còn lại
-lấy từ thư mục của thành viên.
+| Cấu hình | Thư mục | Bản tuần tự | Bản song song |
+|---|---|---|---|
+| A | `vinhvn/` | `src/mlp_seq.c` | `src/mlp_cuda.cu` (CUDA) |
+| B | `hieunv/c_cuda/` | `bench_seq.c` | `bench_cuda.cu` (CUDA) |
+| C | `tuannn/code/` | `sequential/seq_train.c` | `src/train/`, `src/comm/` (MPI), `src/backend/cpu_kernels.c` (OpenMP), `src/backend/cuda_kernels.cu` (CUDA) |
+| D | `thinhnd/cnn/` | `src/seq/train_seq.c` | `src/mpi/train_mpi.c` (MPI), `src/cuda/` (CUDA) |
+| E | `ltnaphixay/` | `src/seq/mlp_seq.c` | `src/cuda/`, `src/allreduce/` (CUDA) |
+
+Lệnh biên dịch và chạy bản tuần tự và bản song song nằm ở [`README.md`](../README.md) mục 3 ở gốc repo, và chi tiết hơn trong
+`README.md` của từng thư mục. Hình 1 và Hình 6 vẽ lại bằng `python3 report/make_figures.py` (cần matplotlib); các hình còn lại lấy từ
+thư mục mã nguồn của cấu hình tương ứng.
 
 ## Phụ lục B. Nguồn số liệu
 
