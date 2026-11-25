@@ -6,7 +6,7 @@ Bài báo không nằm trong repo (bản quyền của tác giả).
 
 Mỗi thành viên làm một phần của bài báo trong **một thư mục riêng**. Mỗi phần có mã C tuần tự, mã song song (MPI và/hoặc CUDA) tự
 cài đặt, kiểm tra tính đúng so với bản tuần tự và kết quả đo kèm log gốc. Tài liệu này là cửa vào chung: bài toán, phần nào của
-bài báo do ai làm, cách biên dịch và chạy từng phần, và kết quả chính.
+bài báo do ai làm, cách biên dịch và chạy từng phần, và kết quả chính. Báo cáo đầy đủ của nhóm: [`report/BAO_CAO.md`](report/BAO_CAO.md).
 
 Mục lục: [1. Bài toán](#1-bài-toán) · [2. Phân công](#2-phân-công-theo-bài-báo) · [3. Biên dịch và chạy](#3-biên-dịch-và-chạy) ·
 [4. Kết quả chính](#4-kết-quả-chính) · [5. Tính đúng](#5-kiểm-tra-tính-đúng) · [6. Giới hạn](#6-giới-hạn-chung) ·
@@ -172,7 +172,7 @@ phần, nên chỉ so tỉ lệ (tăng tốc, xu hướng), không so thời gia
 |---|---|---|---|
 | Conv 96×11×11, stride 4, ảnh 224×224: thời gian theo batch | Tuyến tính: R² ≥ 0,999 (CPU) và ≥ 0,9998 (GPU) với C/CUDA tự viết | T4 + Xeon (Kaggle) | [hieunv ANALYSIS §8](hieunv/ANALYSIS.md), [tuannn E2](tuannn/experiments/results/SUMMARY_dot2.md) |
 | Conv: GPU / CPU 1 luồng (bài báo: khoảng 40×) | **23,3×** (22,3–23,3; kiểu Caffe); speedup theo batch 18,6× (batch 1) → 23,1× (batch 256) | T4 + Xeon, C/CUDA tự viết | [hieunv](hieunv/README.md) |
-| | **54,5×** ở batch 256 (13,2× so với 12 luồng; 11× nếu tính cả chép dữ liệu) | RTX 2060, i5-12600K | [tuannn E2](tuannn/experiments/results/SUMMARY_dot2.md) |
+| | Tham khảo, GPU dùng cuBLAS: 54,5× ở batch 256 (13,2× so với 12 luồng; 11× nếu tính cả chép dữ liệu) | RTX 2060, i5-12600K | [tuannn E2](tuannn/experiments/results/SUMMARY_dot2.md) |
 | | **40–56×** ở batch 64–1024; 2,95× ở batch 1 | RTX 4060, i7-13620H | [thinhnd T6](thinhnd/results/t6_layers.md) |
 | | Tham khảo PyTorch: 27,8× (kiểu Caffe), khoảng 14× nếu dùng `nn.Conv2d` | T4 + Xeon | [hieunv](hieunv/README.md) |
 | FC (ma trận–vector) theo n | O(n²); speedup tăng đều theo n: **1,6× (n = 256) → 23,1× (n = 16384)** với C/CUDA tự viết, chạm khoảng 93–100% băng thông bộ nhớ đo độc lập | T4 + Xeon | [hieunv ANALYSIS §8](hieunv/ANALYSIS.md) |
@@ -248,6 +248,7 @@ Giới hạn riêng của từng phần nằm ở mục "Giới hạn" trong REA
 ```
 .
 ├── README.md        tài liệu này
+├── report/          báo cáo chung của nhóm (BAO_CAO.md), hình và script vẽ hình (make_figures.py)
 ├── vinhvn/          §2 model parallelism: src/mlp_seq.c, src/mlp_cuda.cu, results/
 ├── tuannn/          §3 + §5: code/ (sequential/, src/, apps/), experiments/ (PLAN.md, results/), report/, slides/
 ├── thinhnd/         §3 + §5: cnn/src/{seq,mpi,cuda}/, results/ (t1–t8)
