@@ -249,6 +249,7 @@ Giới hạn riêng của từng phần nằm ở mục "Giới hạn" trong REA
 .
 ├── README.md        tài liệu này
 ├── report/          báo cáo chung của nhóm (BAO_CAO.md), hình và script vẽ hình (make_figures.py)
+├── slides/          slide trình bày 15 phút trên template HUST (HPC_Nhom10_ParallelDistributedDL.pptx) và script dựng slide
 ├── vinhvn/          §2 model parallelism: src/mlp_seq.c, src/mlp_cuda.cu, results/
 ├── tuannn/          §3 + §5: code/ (sequential/, src/, apps/), experiments/ (PLAN.md, results/), report/, slides/
 ├── thinhnd/         §3 + §5: cnn/src/{seq,mpi,cuda}/, results/ (t1–t8)
