@@ -16,6 +16,9 @@ thì đo được nguyên nhân nào? Thư mục này **chỉ đo lại mục 3*
 |---|---|
 | [`code/`](code/) | Code đo (PyTorch): `bench_conv.py`, `bench_fc.py`, `run_all.py` (một lần chạy), `run_session.py` (ba lần chạy trên laptop), `aggregate.py`, `plot.py`, `gpu_diag.py`. Chi tiết ở [code/README.md](code/README.md) |
 | [`kaggle/hpc_replication_kaggle.ipynb`](kaggle/hpc_replication_kaggle.ipynb) | Notebook tự chứa để chạy trên Kaggle, sinh từ `code/make_kaggle_notebook.py` |
+| [`c_cuda/`](c_cuda/) | Bản không dùng thư viện song song (theo yêu cầu bài tập lớn): `bench_seq.c` (C tuần tự, 1 luồng) và `bench_cuda.cu` (kernel CUDA tự viết, không cuBLAS/cuDNN). Chưa chạy. Chi tiết ở [c_cuda/README.md](c_cuda/README.md) |
+| [`PLAN_C_CUDA.md`](PLAN_C_CUDA.md) | Kế hoạch đo lại bằng bản C/CUDA và dự đoán E1–E10, viết trước khi chạy |
+| [`kaggle/hpc_c_cuda_kaggle.ipynb`](kaggle/hpc_c_cuda_kaggle.ipynb) | Notebook Kaggle cho bản C/CUDA, sinh từ `code/make_c_cuda_notebook.py` |
 | [`results/`](results/) | Dữ liệu gốc (CSV, `env.json`, log) và hình. Nên dùng thư mục nào: [results/README.md](results/README.md) |
 | [`ANALYSIS.md`](ANALYSIS.md) | Phân tích: đối chiếu từng kết luận của bài báo, mô hình, giới hạn, bước kiểm chứng tiếp |
 | [`PREDICTIONS.md`](PREDICTIONS.md) | Dự đoán ghi trước khi đo băng thông (kiểm chứng ANALYSIS mục 7); cột kết quả điền sau khi chạy |
