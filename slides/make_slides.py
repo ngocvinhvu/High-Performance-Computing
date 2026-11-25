@@ -239,6 +239,35 @@ def table(slide, x, y, w, rows, col_w, font=12, header_font=12, row_h=0.3, name=
     return gt
 
 
+CODE_BG = RGBColor(0xF3, 0xF3, 0xF3)
+CODE_COMMENT = RGBColor(0x6A, 0x73, 0x7D)
+CODE_FONT = "Courier New"
+
+
+def code_block(slide, x, y, w, h, lines, size=10.5, label=None, name=None):
+    """Khối code: nền xám nhạt, Courier New; phần sau '//' tô xám."""
+    box(slide, x, y, w, h, fill=CODE_BG, radius=0.03)
+    top = y + 0.08
+    if label:
+        text(slide, x + 0.15, y + 0.06, w - 0.3, 0.3, [P(R(label, size=11, bold=True, color=DARKRED))])
+        top = y + 0.36
+    paras = []
+    for ln in lines:
+        if "//" in ln:
+            i = ln.index("//")
+            runs = [R(ln[:i], size=size, color=INK, font=CODE_FONT), R(ln[i:], size=size, color=CODE_COMMENT, font=CODE_FONT)]
+        else:
+            runs = [R(ln if ln else " ", size=size, color=INK, font=CODE_FONT)]
+        paras.append(P(*runs, after=0, line=1.0))
+    return text(slide, x + 0.15, top, w - 0.3, h - (top - y) - 0.05, paras, name=name, margin=0.02)
+
+
+def callout(slide, x, y, w, h, head, body, size=13):
+    box(slide, x, y, w, h)
+    text(slide, x + 0.12, y + 0.08, w - 0.24, 0.35, [P(R(head, size=14, bold=True, color=DARKRED))])
+    text(slide, x + 0.12, y + 0.45, w - 0.24, h - 0.5, [P(R(body, size=size), line=0.95)])
+
+
 def notes(slide, s):
     slide.notes_slide.notes_text_frame.text = s
 
@@ -320,7 +349,7 @@ def build(template, out):
                                      "của bài báo, đối chiếu và kết luận. Khoảng 15 phút.")
     items = [
         ("I", "Bài toán và mô hình toán", "Ba nhận định của bài báo · năm cấu hình thí nghiệm · SGD, im2col, mô hình α–β"),
-        ("II", "Thiết kế song song", "Kernel tự viết · MPI · allreduce đa GPU · pipeline và tensor parallelism · kiểm tra tính đúng"),
+        ("II", "Thiết kế, mã nguồn và phương pháp đo", "Bốn lớp song song · trích đoạn code chính · kiểm tra tính đúng · cách bấm giờ và chỉ số"),
         ("III", "Kết quả", "§3 CPU so với GPU · §5 song song dữ liệu và truyền thông · §2 song song mô hình"),
         ("IV", "Đối chiếu và kết luận", "Nhận định nào đúng, nhận định nào chỉ đúng một phần"),
     ]
@@ -399,7 +428,7 @@ def build(template, out):
     ])
 
     # 7. Section II
-    section_slide(prs, "II.", "THIẾT KẾ SONG SONG")
+    section_slide(prs, "II.", "THIẾT KẾ, MÃ NGUỒN VÀ PHƯƠNG PHÁP ĐO")
 
     # 8. Thiết kế
     s = content_slide(prs, "Thiết kế song song: bốn lớp, đều tự cài đặt",
@@ -431,6 +460,174 @@ def build(template, out):
         text(s, x + 0.2, y + 0.9, 4.15, 1.7,
              [P(R(b, size=14), bullet=True, after=6, line=0.95) for b in bullets])
 
+    # 8b. Tổng quan mã nguồn
+    s = content_slide(prs, "Mã nguồn: năm chương trình, ≈ 13.400 dòng C/CUDA",
+                      "Mỗi cấu hình có bản C tuần tự một luồng và bản song song. Không dùng cuBLAS, cuDNN, NCCL, Thrust hay BLAS: "
+                      "chỉ libc/libm, giao tiếp điểm–điểm của MPI và CUDA runtime. Ngoại lệ ở cấu hình C: có lựa chọn cuBLAS và "
+                      "MPI_Allreduce để làm mốc so sánh. Số dòng đếm trên tệp .c, .cu, .h, .cpp.")
+    table(s, 0.4, 1.05, 9.2, [
+        ["", "Bản tuần tự", "Bản song song", "Dòng", "Biên dịch"],
+        ["A", "mlp_seq.c", "mlp_cuda.cu: GEMM, pipeline, tensor, all-reduce", "741", "make seq · make cuda"],
+        ["B", "bench_seq.c", "bench_cuda.cu: im2col, GEMM, matvec, băng thông", "2.039", "make seq · make cuda ARCH=sm_75"],
+        ["C", "seq_train.c", "src/train, src/comm (MPI), cpu_kernels.c (OpenMP), cuda_kernels.cu", "7.721", "make · scripts/build.sh (CMake)"],
+        ["D", "train_seq.c", "train_mpi.c (MPI), kernels.cu (CUDA, NVRTC)", "1.315", "python build.py"],
+        ["E", "mlp_seq.c", "train_dp.cu, allreduce/{tree,ring,rd}.cu, bench_allreduce.cu", "1.567", "make seq · make ARCH=sm_75"],
+    ], col_w=[0.4, 1.35, 4.15, 0.75, 2.55], font=12, header_font=12, row_h=0.5, bold_first_col=True, name="Bảng mã nguồn")
+    callout(s, 0.4, 4.35, 2.95, 2.25, "Không thư viện tính toán",
+            "Chỉ libc/libm, MPI điểm–điểm (Send/Recv, Sendrecv, Isend/Irecv) và CUDA runtime (malloc, stream, event, memcpy)")
+    callout(s, 3.52, 4.35, 2.95, 2.25, "Cùng mô hình hai bản",
+            "Bản tuần tự và song song dùng chung khởi tạo, thứ tự mẫu và luật cập nhật, nên so được từng giá trị")
+    callout(s, 6.64, 4.35, 2.95, 2.25, "Tái lập được",
+            "README gốc ghi lệnh build và chạy cả hai bản; script chạy thí nghiệm và log gốc nằm cạnh mã")
+
+    # 8c. GEMM
+    s = content_slide(prs, "Code 1: GEMM tự viết, tile 64×64 trong shared memory",
+                      "Đây là kernel nặng nhất ở mọi cấu hình (conv sau im2col cũng là GEMM). Mỗi block 256 luồng tính một ô 64×64 của C. "
+                      "Mỗi lát K = 16 được nạp một lần vào shared memory rồi dùng lại 64 lần. Mỗi luồng giữ 4×4 tổng trong thanh ghi. "
+                      "Cột đệm +1 tránh xung đột bank. Trên T4 bậc thang naive → shared → thanh ghi đi từ 453 lên 1.806 GFLOP/s.")
+    code_block(s, 0.4, 1.0, 9.2, 3.65, [
+        "// C[M×N] = A[M×K]·B[K×N]; 1 block = 16×16 luồng tính ô 64×64 của C",
+        "__shared__ float As[BK][BM + 1];     // BK = 16, BM = 64; +1 tránh xung đột bank",
+        "__shared__ float Bs[BK][BN + 1];",
+        "float acc[4][4] = {0};               // mỗi luồng giữ 4×4 tổng trong thanh ghi",
+        "for (int k0 = 0; k0 < K; k0 += BK) {",
+        "    load_tile(As, A, m0, k0);        // 256 luồng nạp 64×16 phần tử, đọc liền mạch",
+        "    load_tile(Bs, B, k0, n0);",
+        "    __syncthreads();",
+        "    for (int k = 0; k < BK; k++) {   // mỗi phần tử trong shared dùng lại 64 lần",
+        "        for (i) a[i] = As[k][ty + 16*i];",
+        "        for (j) b[j] = Bs[k][tx + 16*j];",
+        "        for (i) for (j) acc[i][j] += a[i] * b[j];",
+        "    }",
+        "    __syncthreads();",
+        "}",
+    ], size=12, label="Rút gọn từ mlp_cuda.cu (cấu hình A); cấu hình B và E dùng cùng ý tưởng", name="Code GEMM")
+    stat(s, 0.4, 4.85, 2.95, "453 → 1.806", "GFLOP/s trên T4: naive → shared → chia khối thanh ghi (B)", big_size=24, h=1.75)
+    stat(s, 3.52, 4.85, 2.95, "23,8 TFLOP/s", "trên H100, khoảng 45% cuBLAS (A)", big_size=24, h=1.75)
+    stat(s, 6.64, 4.85, 2.95, "94,5–95,5%", "thời gian kernel của một bước huấn luyện là GEMM (E)", big_size=24, h=1.75)
+
+    # 8d. Matvec
+    s = content_slide(prs, "Code 2: ma trận–vector, mỗi warp một hàng",
+                      "Lớp FC bị giới hạn bởi băng thông, nên mục tiêu là đọc bộ nhớ liền mạch. 32 luồng của một warp đọc liên tiếp một hàng "
+                      "bằng float4, cộng bằng fmaf, rồi rút gọn trong warp bằng shuffle, không cần shared memory hay atomic. "
+                      "Kết quả đạt 100% băng thông đọc đo độc lập trên T4.")
+    code_block(s, 0.4, 1.0, 5.9, 4.4, [
+        "int row  = (blockIdx.x*blockDim.x",
+        "            + threadIdx.x) >> 5;",
+        "int lane = threadIdx.x & 31;  // 32 luồng/hàng",
+        "if (row >= n) return;",
+        "const float4 *a4 =",
+        "    (const float4 *)(A + (long)row * n);",
+        "const float4 *x4 = (const float4 *)x;",
+        "float s = 0.f;",
+        "for (int k = lane; k < n/4; k += 32) {",
+        "    float4 u = a4[k], v = x4[k]; // liền mạch",
+        "    s = fmaf(u.x, v.x, s); s = fmaf(u.y, v.y, s);",
+        "    s = fmaf(u.z, v.z, s); s = fmaf(u.w, v.w, s);",
+        "}",
+        "for (int off = 16; off > 0; off >>= 1)",
+        "    s += __shfl_down_sync(0xffffffff, s, off);",
+        "if (lane == 0) y[row] = s;",
+    ], size=12, label="matvec_warp_k, bench_cuda.cu (cấu hình B)", name="Code matvec")
+    callout(s, 6.5, 1.0, 3.1, 1.35, "Đọc liền mạch",
+            "32 luồng đọc 32 float4 liên tiếp: mỗi lần đọc dùng trọn đường bộ nhớ")
+    callout(s, 6.5, 2.5, 3.1, 1.35, "Rút gọn trong warp",
+            "5 bước __shfl_down_sync, không shared memory, không atomic")
+    callout(s, 6.5, 4.0, 3.1, 1.4, "Một lần khởi chạy",
+            "Ít chi phí cố định, nên GPU đã nhanh hơn CPU từ n = 256 (1,6×)")
+    stat(s, 0.4, 5.6, 4.5, "93% · 100%", "băng thông đọc đo độc lập mà matvec đạt được trên CPU và GPU", big_size=26, h=1.1)
+    stat(s, 5.1, 5.6, 4.5, "23,1×", "GPU so với CPU 1 luồng ở n = 16384 ≈ tỉ lệ băng thông", big_size=26, h=1.1)
+
+    # 8e. Ring allreduce
+    s = content_slide(prs, "Code 3: ring allreduce, trên MPI và trên GPU",
+                      "Cùng một thuật toán ở hai tầng. Trên MPI (cấu hình C): mỗi bước gửi n/k phần tử sang phải và nhận từ trái bằng "
+                      "MPI_Sendrecv, cộng vào khối tương ứng; sau k−1 bước mỗi rank giữ một khối đã cộng xong, rồi allgather k−1 bước. "
+                      "Trên GPU (cấu hình E): chép bằng cudaMemcpyPeerAsync trên stream của bên nhận, cộng bằng kernel, đồng bộ giữa "
+                      "láng giềng bằng event nên host không phải chờ.")
+    code_block(s, 0.4, 1.0, 6.3, 2.75, [
+        "for (int s = 0; s < k - 1; ++s) {   // reduce-scatter",
+        "    int sc = mod(rank - s, k), rc = mod(rank - s - 1, k);",
+        "    MPI_Sendrecv(buf + OFF(sc), LEN(sc), MPI_FLOAT, right, ..,",
+        "                 scratch, LEN(rc), MPI_FLOAT, left, ..);",
+        "    add_into(buf + OFF(rc), scratch, LEN(rc));",
+        "}",
+        "for (int s = 0; s < k - 1; ++s)     // allgather: chép khối",
+        "    MPI_Sendrecv(buf+OFF(sc), .., right, buf+OFF(rc), .., left);",
+    ], size=10.5, label="MPI, comm.c (cấu hình C)", name="Code ring MPI")
+    code_block(s, 0.4, 3.9, 6.3, 2.75, [
+        "for (int s = 0; s < k - 1; s++) {   // reduce-scatter",
+        "    neighbour_sync(k, streams);     // event: chờ 2 láng giềng",
+        "    for (int i = 0; i < k; i++) {",
+        "        int r = (i + 1) % k, c = mod(i - s, k);",
+        "        ar_copy(scratch[r], r, grads[i] + off(c), i,",
+        "                len(c), streams[r]); // cudaMemcpyPeerAsync",
+        "        ar_add(r, grads[r] + off(c), scratch[r],",
+        "               len(c), streams[r]);  // kernel cộng",
+        "    }",
+        "}   // sau đó chia 1/k và allgather k−1 bước",
+    ], size=10.5, label="CUDA đa GPU, ring.cu (cấu hình E)", name="Code ring GPU")
+    callout(s, 6.9, 1.0, 2.7, 1.75, "2(k−1) bước",
+            "mỗi bước gửi n/k phần tử: băng thông gần tối ưu, nhưng độ trễ tăng theo k")
+    callout(s, 6.9, 2.9, 2.7, 1.75, "Kết quả trùng từng bit",
+            "mỗi khối chỉ cộng ở một nơi rồi chép đi, nên mọi bản sao giống nhau")
+    callout(s, 6.9, 4.8, 2.7, 1.85, "Đo được",
+            "16 MiB, k = 10: 33 ms so với 47 ms của MPI_Allreduce (C); 157 GB/s trên NVLink (E)")
+
+    # 8f. Sync SGD và parameter server
+    s = content_slide(prs, "Code 4: Sync SGD qua cây nhị thức và parameter server",
+                      "Cấu hình D. Sync: mỗi rank tính gradient trên phần batch của mình, cộng về rank 0 bằng cây nhị thức log₂p vòng, "
+                      "phát lại cũng bằng cây, rồi mọi rank cập nhật giống nhau. Async: rank 0 là server, nhận gradient từ bất kỳ worker nào "
+                      "xong trước (MPI_ANY_SOURCE), cập nhật, gửi tham số mới và chỉ số batch kế tiếp cho đúng worker đó. Bước học chia √(p−1) "
+                      "vì gradient trễ cộng dồn.")
+    code_block(s, 0.4, 1.0, 9.2, 2.5, [
+        "// Sync SGD: mỗi bước",
+        "g[NPARAM] = batch_gradient(w, d, perm + at + first, last - first, g);",
+        "tree_sum(g, tmp, NPARAM + 1);           // cây nhị thức: mọi rank → rank 0",
+        "tree_bcast(g, NPARAM + 1, MPI_REAL_T);  // rank 0 → mọi rank",
+        "sgd_update(w, v, g, 1.0 / m, lr, momentum);",
+        "// tree_sum: log2(p) vòng",
+        "for (mask = 1; mask < size; mask <<= 1) {",
+        "    if (rank & mask) { MPI_Send(buf, .., rank - mask, ..); break; }",
+        "    if (rank + mask < size) { MPI_Recv(tmp, .., rank + mask, ..); buf += tmp; }",
+        "}",
+    ], size=11, label="train_mpi.c: chế độ sync", name="Code sync")
+    code_block(s, 0.4, 3.65, 9.2, 1.85, [
+        "while (active > 0) {                    // rank 0 = parameter server",
+        "    MPI_Recv(g, .., MPI_ANY_SOURCE, TAG_GRADIENT, .., &st);  // ai xong trước",
+        "    sgd_update(w, v, g, 1 / g[NPARAM+1], lr / sqrt(p - 1), mu);",
+        "    memcpy(buf, w, ..);  buf[NPARAM] = next < batches ? next++ : -1;",
+        "    MPI_Send(buf, .., st.MPI_SOURCE, TAG_WORK, ..);  // tham số mới + batch kế",
+        "}",
+    ], size=11, label="train_mpi.c: chế độ async", name="Code async")
+    callout(s, 0.4, 5.65, 4.5, 1.05, "Sync: bằng tuần tự", "2·log₂p bước gửi O(P) mỗi mini-batch; cùng kết quả với bản C", size=12)
+    callout(s, 5.1, 5.65, 4.5, 1.05, "Async: không chờ nhau", "Server là nút thắt; gradient tính trên tham số cũ (trễ)", size=12)
+
+    # 8g. Pipeline
+    s = content_slide(prs, "Code 5: pipeline nhiều GPU bằng stream và event",
+                      "Cấu hình A. Mỗi GPU một stream. Vòng lặp đưa micro-batch m qua stage s; stage sau chờ event của stage trước thay vì "
+                      "chờ host, nên GPU s xử lý micro-batch m+1 trong lúc GPU s+1 xử lý m. Activation chuyển thẳng giữa GPU bằng "
+                      "cudaMemcpyPeerAsync. Backward đối xứng, đi ngược từ micro-batch và stage cuối.")
+    code_block(s, 0.4, 1.0, 9.2, 3.35, [
+        "for (int m = 0; m < M; m++)                    // forward: micro-batch m",
+        "    for (int s = 0; s < S; s++) {              // qua từng stage, mỗi stage 1 GPU",
+        "        cudaSetDevice(s);",
+        "        if (s > 0)                             // chờ activation của stage trước",
+        "            cudaStreamWaitEvent(st[s], evF[s - 1][m], 0);",
+        "        for (int j = 0; j < nb(s); j++)  fwd_block(st[s], .., j, m);",
+        "        if (s < S - 1) {                       // gửi activation sang GPU s+1",
+        "            cudaMemcpyPeerAsync(X(s+1, 0, m), s+1, X(s, nb(s), m), s, bytes, st[s]);",
+        "            cudaEventRecord(evF[s][m], st[s]); // báo cho stage s+1",
+        "        }",
+        "    }",
+        "// backward: m = M−1..0, s = S−1..0, đối xứng với evB; rồi sgd_update trên từng GPU",
+    ], size=11.5, label="step() trong mlp_cuda.cu (cấu hình A)", name="Code pipeline")
+    callout(s, 0.4, 4.5, 2.95, 2.15, "Không đồng bộ host",
+            "Phụ thuộc giữa GPU biểu diễn bằng event; host chỉ chờ một lần ở cuối bước")
+    callout(s, 3.52, 4.5, 2.95, 2.15, "Tensor parallel",
+            "W₁ chia cột, W₂ chia hàng; mỗi khối 2 all-reduce bằng recursive doubling")
+    callout(s, 6.64, 4.5, 2.95, 2.15, "Kết quả",
+            "M = 1: 1,00×; M = 8: 2,64× trên 4 GPU (trần 2,91×); tensor 3,73×")
+
     # 9. Kiểm tra tính đúng
     s = content_slide(prs, "Kiểm tra tính đúng trước khi đo",
                       "Mọi phép đo chỉ chạy sau khi bản song song khớp bản tuần tự. Sai số đều ở mức làm tròn số thực. "
@@ -447,6 +644,51 @@ def build(template, out):
         ["E", "5.670 lần chạy với thứ tự stream ngẫu nhiên; 2 GPU so với 1 GPU", "loss 2,3·10⁻⁵ sau 10 epoch"],
     ], col_w=[0.4, 3.25, 2.4], font=13, header_font=13, row_h=0.62, bold_first_col=True, name="Bảng tính đúng")
     caption(s, 3.55, 5.0, 6.05, "Sync SGD trên k tiến trình bằng đúng SGD tuần tự (mục I), nên sai lệch chỉ đến từ thứ tự cộng số thực.", size=12)
+
+    # 9b. Phương pháp đo: bấm giờ
+    s = content_slide(prs, "Phương pháp benchmark: bấm giờ thế nào",
+                      "Mỗi cấu hình có cách bấm giờ riêng nhưng cùng nguyên tắc: khởi động trước khi đo để GPU đạt xung ổn định, đồng bộ "
+                      "thiết bị trước và sau mỗi lần bấm giờ, lặp nhiều lần và báo trung vị hoặc trung bình kèm khoảng. Với phép toán tập thể "
+                      "trên MPI, thời gian là của rank chậm nhất. Riêng cấu hình A chỉ 1 lần chạy mỗi cấu hình, nên chênh lệch vài phần trăm "
+                      "chưa đủ để kết luận.")
+    table(s, 0.4, 1.05, 9.2, [
+        ["", "Bấm giờ", "Khởi động", "Lặp và thống kê", "Ghi kèm"],
+        ["A", "steady_clock quanh cả bước; cudaStreamSynchronize mọi GPU", "1 bước", "3 bước, trung bình; 1 lần chạy", "bộ nhớ (cudaMemGetInfo), MB chuyển"],
+        ["B", "Đồng hồ host; cudaDeviceSynchronize trước và sau mỗi lần", "GEMM 5 s cho xung ổn định + 3 lần", "GPU 30, CPU 10 lần; trung vị; 3 lần chạy", "xung nhịp NVML; thứ tự kích thước xáo trộn"],
+        ["C", "Đồng hồ 10 pha mỗi rank (forward, backward, chờ, comm…)", "theo cấu hình YAML", "3 lần chạy (scaling), 2 seed (độ chính xác)", "manifest: power plan, tải nền, commit"],
+        ["D", "MPI_Wtime; epoch = rank chậm nhất (MPI_Reduce MAX)", "–", "3 lần (scaling), 5–10 seed (độ chính xác)", "thời gian chờ/truyền riêng"],
+        ["E", "bench: đồng hồ host + đồng bộ mọi stream; train: cudaEvent", "5 lần (bench); bỏ epoch 1", "bench 20 lần, trung vị; 3 lần chạy", "ma trận P2P, xung nhịp, hạ xung"],
+    ], col_w=[0.4, 2.85, 1.85, 2.2, 1.9], font=11, header_font=12, row_h=0.78, bold_first_col=True, name="Bảng bấm giờ")
+    callout(s, 0.4, 5.85, 4.5, 0.85, "Dữ liệu đã nằm trên thiết bị", "trừ khi ghi rõ \"tính cả chép host↔device\"", size=12)
+    callout(s, 5.1, 5.85, 4.5, 0.85, "Thời gian huấn luyện", "không tính lúc đánh giá; epoch 1 có khởi động bị loại (E)", size=12)
+
+    # 9c. Chỉ số và quy trình
+    s = content_slide(prs, "Phương pháp benchmark: chỉ số và quy trình",
+                      "Bảng trái là định nghĩa của mọi con số trên các slide kết quả. Bên phải là quy trình chung: ghi dự đoán trước khi chạy, "
+                      "kiểm tra tính đúng trước khi đo, giữ log gốc, ghi điều kiện máy, và tách các lần đo hỏng (ví dụ GPU bị hạ xung) "
+                      "thay vì lặng lẽ bỏ đi.")
+    table(s, 0.4, 1.05, 5.75, [
+        ["Chỉ số", "Định nghĩa"],
+        ["Tăng tốc", "T(tuần tự hoặc 1 GPU) / T(song song)"],
+        ["Hiệu suất", "tăng tốc / số tiến trình hoặc số GPU"],
+        ["Tỉ lệ CPU/GPU (conv)", "tỉ lệ độ dốc của t(B) = a + b·B, khớp trên batch 16–256"],
+        ["TFLOP/s (A)", "12·B·H·F·L / thời gian một bước"],
+        ["Băng thông bus (E)", "byte / t · 2(k−1)/k, như nccl-tests"],
+        ["Truyền thông không che", "từ lúc xong backward tới lúc xong allreduce, % thời gian bước"],
+        ["Thời gian tới ngưỡng (D)", "thời gian tới validation 85%, so ở cùng độ chính xác"],
+    ], col_w=[2.0, 3.75], font=12, header_font=12, row_h=0.62, bold_first_col=True, name="Bảng chỉ số")
+    text(s, 6.4, 1.05, 3.2, 0.4, [P(R("Quy trình đo", size=16, bold=True, color=DARKRED, font=TITLE_FONT))])
+    steps = [
+        "Ghi dự đoán vào PLAN.md trước khi chạy",
+        "Kiểm tra bản song song khớp bản tuần tự",
+        "Khởi động, rồi đo nhiều lần; xáo trộn thứ tự kích thước",
+        "Giữ log, CSV, JSON gốc cạnh bảng tổng hợp",
+        "Ghi xung nhịp, power plan, ma trận P2P; tách lần đo hỏng",
+    ]
+    for i, st_ in enumerate(steps):
+        y = 1.55 + i * 1.02
+        badge(s, 6.4, y + 0.08, 0.45, str(i + 1), size=14)
+        text(s, 7.0, y, 2.6, 0.95, [P(R(st_, size=13), line=0.95)], anchor=MSO_ANCHOR.MIDDLE)
 
     # 10. Section III
     section_slide(prs, "III.", "KẾT QUẢ")
