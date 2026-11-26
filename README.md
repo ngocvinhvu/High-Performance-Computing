@@ -225,7 +225,7 @@ thay đổi từ dưới 1× đến hơn 50× tuỳ loại lớp, kích thước
 | 2× T4, MLP 1,63 MB gradient, batch 256 | 2 GPU **chậm hơn** 1 GPU (0,87–0,89×): khoảng 50% mỗi bước là truyền thông không che được | [ltnaphixay §4](ltnaphixay/README.md) |
 | Quét batch trên 2× T4 | Hoà vốn giữa batch 256 và 1024; đạt tới 1,60× ở batch 4096 | [ltnaphixay §6](ltnaphixay/README.md) |
 | Allreduce theo kích thước, k = 2 | Nhỏ (≤ 8 KB): qua host nhanh nhất; vừa (16 KB–2 MB): recursive doubling; lớn (≥ 4 MB): ring | [ltnaphixay §5](ltnaphixay/README.md) |
-| 4× A100, NVLink so với qua host, 256 MB | Ring 157 GB/s (NVLink) so với 5,8 GB/s (qua host); tree giảm từ 93 xuống 51 GB/s khi k = 2 → 4, đúng phân tích gom-rồi-phát của bài | [ltnaphixay §7](ltnaphixay/README.md) |
+| 4× A100, NVLink so với qua host, 256 MB | Ring 157 GB/s (NVLink) so với 5,8 GB/s (qua host); tree phẳng (gom về GPU 0) giảm từ 93 xuống 51 GB/s khi k = 2 → 4, đúng chi phí 2(k−1)(α + nβ) tăng theo k | [ltnaphixay §7](ltnaphixay/README.md) |
 | Số hạng độ trễ O(L·k) | Thông điệp nhỏ: ring cần 2(k−1) = 6 bước ở k = 4 (khoảng 0,44 ms), rd chỉ log₂k = 2 bước (khoảng 0,15 ms) | [ltnaphixay §7](ltnaphixay/README.md) |
 | 4 thuật toán allreduce trên luồng tự truyền tin, p = 4, 8 | Khớp α ≈ 15,9 µs, 0,90 GB/s; 4–16 KB: recursive doubling nhanh nhất; từ 64 KB (gồm gradient 212 KB của CNN): ring nhanh nhất | [ducnm EXP3](ducnm/results/exp3_comm_allreduce.md) |
 | 6 thuật toán allreduce trên CPU, 16 MiB, k = 2–10 | Ring nhanh nhất từ k = 4 (33 ms so với 47 ms của `MPI_Allreduce` ở k = 10); recursive doubling sụp ở k ≥ 8 | [tuannn E3](tuannn/experiments/results/SUMMARY_dot2.md) |

@@ -37,8 +37,8 @@ Kết quả chính của nhóm:
 3. **Đồng bộ thắng bất đồng bộ khi so ở cùng độ chính xác** (nhanh hơn 1,46–3,31×). Gradient trễ d bước với bước học η càng khó học
    khi tích d·η càng lớn.
 4. **Truyền thông quyết định có nên dùng nhiều GPU.** Với mô hình nhỏ ở batch 256, 2 GPU chậm hơn 1 GPU (0,88×) vì khoảng 50% mỗi bước
-   là truyền thông; từ batch 1024 trở lên 2 GPU thắng (tới 1,60×). Thuật toán gom về một GPU rồi phát lại (cách bài phân tích) mất băng
-   thông khi k tăng (93 → 51 GB/s), còn ring giữ 157 GB/s trên NVLink.
+   là truyền thông; từ batch 1024 trở lên 2 GPU thắng (tới 1,60×). Cách gom về một GPU driver rồi phát lại (mô hình driver ở §5 của
+   bài, cài dạng cây phẳng) mất băng thông khi k tăng (93 → 51 GB/s), còn ring giữ 157 GB/s trên NVLink.
 5. **§2 đúng.** Chia mô hình mà không chia micro-batch cho tăng tốc 1,00×. Mô hình 12,9 tỉ tham số không chạy được trên một H100 nhưng
    chạy được trên 2 và 4 GPU. Muốn tăng tốc phải dùng pipeline nhiều micro-batch (2,64× trên 4 GPU) hoặc tensor parallelism (3,73×).
 
@@ -120,13 +120,13 @@ Gửi một thông điệp `n` byte tốn `α + nβ` (α độ trễ, β = 1/bă
 
 | Thuật toán | Thời gian | Ghi chú |
 |---|---|---|
-| Gom về một máy rồi phát lại (tree, "BitTorrent aggregate" của bài) | `2·log₂k · (α + nβ)` | Bài tính chi phí tổng là `O(L·k) + O(k·p/B)` |
-| Driver trung tâm (naive, kiểu parameter server) | `2(k−1) · (α + nβ)` | Driver là nút thắt |
+| Gom về một máy rồi phát lại theo cây nhị thức (tree, "BitTorrent aggregate" của bài) | `2·log₂k · (α + nβ)` | Bài tính chi phí tổng các thông điệp là `O(L·k) + O(k·p/B)` |
+| Driver trung tâm, gửi lần lượt (naive kiểu parameter server; tree phẳng của cấu hình E) | `2(k−1) · (α + nβ)` | Driver là nút thắt; thời gian bằng đúng tổng chi phí thông điệp của bài |
 | Recursive doubling | `log₂k · (α + nβ)` | Ít bước, gửi cả vector mỗi bước |
 | Ring (reduce-scatter + allgather) | `2(k−1)·α + 2·(k−1)/k · nβ` | Nhiều bước, nhưng băng thông gần tối ưu |
 
-Hai hệ quả kiểm chứng được: với thông điệp nhỏ, số hạng `α` chiếm ưu thế nên thuật toán ít bước (recursive doubling, tree) thắng; với
-thông điệp lớn, số hạng `nβ` chiếm ưu thế nên ring thắng, và tree mất băng thông khi `k` tăng.
+Hai hệ quả kiểm chứng được: với thông điệp nhỏ, số hạng `α` chiếm ưu thế nên thuật toán ít bước (recursive doubling, tree nhị thức) thắng;
+với thông điệp lớn, số hạng `nβ` chiếm ưu thế nên ring thắng, và cách gom về một máy driver mất băng thông khi `k` tăng.
 
 **Khi nào song song dữ liệu có lợi.** Một bước trên 1 GPU tốn `T_c(B)`, tỉ lệ với batch. Trên `k` GPU tốn `T_c(B)/k + T_ar(p)`, trong
 đó `T_ar(p)` là thời gian allreduce gradient `p` tham số, **không phụ thuộc batch**. Tăng tốc `S = T_c(B) / (T_c(B)/k + T_ar(p))` lớn
@@ -212,7 +212,7 @@ thuật toán sau, mỗi thuật toán một tệp riêng:
 | Phương pháp | Cách hoạt động |
 |---|---|
 | `host_ref` | Chép mọi gradient về CPU, lấy trung bình, chép ngược lên GPU. Dùng làm chuẩn tính đúng |
-| `tree` | Cách của bài: reduce về GPU 0, chia `k`, broadcast lại |
+| `tree` | Cây phẳng: gom (reduce) về GPU 0 (máy driver như §5 của bài), chia `k`, broadcast lại; GPU 0 trao đổi lần lượt với từng GPU, chi phí `2(k−1)·(α + nβ)`. Bài gửi các thông điệp này trong log₂k vòng song song (BitTorrent aggregate) |
 | `ring` | Reduce-scatter rồi allgather: `k − 1` bước, mỗi bước GPU `i` chép một khối `n/k` phần tử sang GPU `i+1` bằng `cudaMemcpyPeerAsync` trên stream của bên nhận, bên nhận cộng bằng kernel; trước mỗi bước chờ cả hai láng giềng bằng event |
 | `rd` | Recursive doubling; GPU dư được gộp vào khi `k` không là lũy thừa của 2 |
 | `--overlap` | Bắt đầu allreduce gradient lớp 2 trong lúc lan truyền ngược của lớp 1 còn chạy |
@@ -428,8 +428,8 @@ cấu hình E. Nhãn trong hình bằng tiếng Anh.*
 | k = 4, NVLink | 51 GB/s | **157 GB/s** | 101 GB/s |
 | k = 4, qua host | 4,0 GB/s | 5,8 GB/s | 4,0 GB/s |
 
-- **Tree mất băng thông khi k tăng** (93 → 51 GB/s) vì GPU 0 phải nhận và gửi mọi thông điệp; đây là đúng cách gom-rồi-phát mà bài phân
-  tích, và nó không phải lựa chọn tốt khi gradient lớn. Ring giữ 154–157 GB/s.
+- **Tree phẳng mất băng thông khi k tăng** (93 → 51 GB/s) vì GPU 0 phải nhận và gửi mọi thông điệp, đúng như dự đoán của chi phí
+  `2(k−1)(α + nβ)` tăng tuyến tính theo k. Gom về một máy driver không phải lựa chọn tốt khi gradient lớn. Ring giữ 154–157 GB/s.
 - **Số hạng độ trễ phụ thuộc k thấy được rõ:** với thông điệp tới 2 MB ở k = 4, ring tốn khoảng 0,44 ms vì cần 2(k−1) = 6 bước đồng bộ,
   còn rd chỉ khoảng 0,15 ms với log₂k = 2 bước. Đây là số hạng `O(L·k)` trong công thức của bài.
 - **NVLink nhanh hơn đi qua host 12–27 lần** với thông điệp lớn. Ở batch 4096, 4 GPU đạt 1,59× với NVLink nhưng chỉ 1,23–1,33× khi qua

@@ -463,11 +463,12 @@ def build(template, out):
     text(s, 5.1, 1.1, 4.5, 0.4, [P(R("Chi phí allreduce n byte trên k máy", size=16, bold=True, color=DARKRED, font=TITLE_FONT))])
     table(s, 5.1, 1.55, 4.5, [
         ["Thuật toán", "Thời gian"],
-        ["tree (gom rồi phát, bài báo)", "2·log₂k·(α + nβ)"],
+        ["tree nhị thức (BitTorrent, bài báo)", "2·log₂k·(α + nβ)"],
+        ["gom phẳng về driver (tree phẳng)", "2(k−1)·(α + nβ)"],
         ["recursive doubling", "log₂k·(α + nβ)"],
         ["ring", "2(k−1)·α + 2(k−1)/k·nβ"],
-    ], col_w=[2.2, 2.3], font=13, header_font=13, row_h=0.4, name="Bảng alpha-beta")
-    text(s, 5.1, 3.3, 4.5, 3.4, [
+    ], col_w=[2.3, 2.2], font=12, header_font=13, row_h=0.38, name="Bảng alpha-beta")
+    text(s, 5.1, 3.75, 4.5, 2.95, [
         P(R("Thông điệp nhỏ: ít bước thắng. Thông điệp lớn: ring thắng.", size=14), after=10),
         P(R("Khi nào thêm GPU có lợi", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
         P(R("T_c(B)·(1 − 1/k) > T_ar(p)", size=15, bold=True), after=2),
@@ -949,6 +950,15 @@ def build(template, out):
         P(R("T_ar ≈ 0,4 ms không đổi theo batch; tính toán tăng theo batch", size=14), bullet=True, after=4),
         P(R("Nhỏ: qua host; vừa: rd; lớn: ring", size=14), bullet=True),
     ])
+    hb = {"bold": True, "color": DARKRED}
+    text(s, 0.4, 4.7, 9.2, 0.4, [P(R("Allreduce thuần trên 2× T4, thời gian mỗi lần (ms, trung vị 20 lần đo)", size=15, bold=True, color=DARKRED, font=TITLE_FONT))])
+    table(s, 0.4, 5.12, 9.2, [
+        ["Kích thước", "host_ref (qua CPU)", "tree (phẳng)", "ring", "recursive doubling"],
+        ["4 KB", [("0,025", hb)], "0,029", "0,053", "0,032"],
+        ["256 KB", "0,212", "0,101", "0,098", [("0,078", hb)]],
+        ["2 MB", "1,518", "0,486", "0,482", [("0,456", hb)]],
+        ["64 MB", "47,980", "15,001", [("14,298", hb)], "14,979"],
+    ], col_w=[1.6, 2.0, 1.8, 1.8, 2.0], font=12, header_font=12, row_h=0.3, bold_first_col=True, name="Bảng allreduce theo kích thước")
 
     # 15b. NVLink so với qua host (cấu hình E, 4× A100)
     s = content_slide(prs, "§5: NVLink so với qua host trên 4× A100",
