@@ -61,7 +61,7 @@ Các phương pháp (mỗi phương pháp một file trong `src/allreduce/`):
 | Phương pháp | Cách hoạt động |
 |---|---|
 | `host_ref` | Chép mọi gradient về CPU, lấy trung bình, chép ngược lên GPU. Dùng làm chuẩn để kiểm tra tính đúng |
-| `tree` | Phương pháp của bài báo: gom (reduce) về GPU 0, lấy trung bình, phát (broadcast) lại |
+| `tree` | Gom (reduce) về GPU 0 (máy driver như §5 của bài), lấy trung bình, phát (broadcast) lại. Cây phẳng: GPU 0 trao đổi lần lượt với từng GPU, chi phí 2(k−1)·(α + nβ), bằng tổng chi phí thông điệp O(L·k) + O(k·p/B) của bài; bài dùng BitTorrent aggregate (cây nhị thức, log₂k vòng song song) |
 | `ring` | Reduce-scatter rồi allgather (chưa chia nhỏ khối để pipeline) |
 | `rd` | Recursive doubling; GPU dư được gộp vào khi k không phải lũy thừa của 2 |
 | `--overlap` | Bắt đầu allreduce gradient lớp 2 trong khi lan truyền ngược của lớp 1 vẫn đang chạy |
@@ -166,8 +166,7 @@ Thời gian trung vị mỗi lần allreduce, k = 2, ms ([`allreduce.csv`](runs/
 | 16 MB | 11,970 | 3,787 | **3,608** | 3,747 |
 | 64 MB | 47,980 | 15,001 | **14,298** | 14,979 |
 
-Băng thông bus ở 64 MB: host_ref 1,40, tree 4,47, ring 4,69, rd 4,48 GB/s. Một lần chép P2P một
-chiều đạt 9,9 GB/s (`runs/kaggle-2026-11-22/`).
+Băng thông bus ở 64 MB: host_ref 1,40, tree 4,47, ring 4,69, rd 4,48 GB/s.
 
 - **Thông điệp nhỏ bị giới hạn bởi độ trễ.** Với 4–8 KB, hai lần chép nhỏ qua CPU nhanh hơn một chút
   so với mọi phương pháp trên GPU. Ring có mức sàn khoảng 0,053 ms vì phải chạy nhiều bước phụ thuộc
@@ -176,10 +175,9 @@ chiều đạt 9,9 GB/s (`runs/kaggle-2026-11-22/`).
   ở 1–2 MB. Gradient 1,63 MB của mô hình nằm trong khoảng này.
 - **Thông điệp lớn bị giới hạn bởi băng thông và ring nhanh nhất**, nhưng chỉ hơn 4–5 %. Đường qua
   CPU chậm hơn các phương pháp GPU 3,3 lần ở đây (1,4 so với 4,5–4,7 GB/s).
-- **Các phương pháp GPU chỉ đạt khoảng một nửa tốc độ đường truyền.** Tree phải gửi dữ liệu đi một
-  chiều rồi gửi về, nên một nửa là giới hạn của nó. Ring và rd về lý thuyết có thể dùng cả hai chiều
-  cùng lúc nhưng không vượt được mức đó, cho thấy hai chiều không chạy chồng lên nhau và ring cần
-  pipeline theo khối.
+- **Cả ba phương pháp GPU dừng ở cùng mức 4,5–4,7 GB/s**, nên giới hạn nằm ở đường truyền (PCIe qua
+  host bridge) chứ không ở thuật toán. Ring và rd về lý thuyết có thể dùng cả hai chiều cùng lúc nhưng
+  không vượt được tree, cho thấy hai chiều không chạy chồng lên nhau và ring cần pipeline theo khối.
 - **Lặp lại được.** Số liệu khớp với lần chạy 2 epoch trước đó trên một máy Kaggle khác, sai khác
   dưới 0,3 % với thông điệp từ 4 MB trở lên và dưới 9 % với thông điệp nhỏ.
 - Với k = 2, ba thuật toán GPU truyền cùng một lượng dữ liệu. Khác biệt lý thuyết giữa chúng chỉ thể
@@ -263,7 +261,7 @@ Kết quả cho thấy:
   O(L·k) + O(k·p/B). Gradient 1,63 MB nằm trong vùng bị chi phối bởi độ trễ, nên khi huấn luyện ở
   batch 256, rd và tree nhanh hơn ring kể cả qua NVLink.
 - **Tree mất băng thông khi k tăng** (93 → 51 GB/s qua NVLink), vì GPU 0 phải nhận và gửi mọi thông
-  điệp, đúng như phân tích reduce-về-một-GPU-rồi-broadcast của bài báo.
+  điệp, đúng như dự đoán của cây phẳng: chi phí 2(k−1)(α + nβ) tăng tuyến tính theo k.
 - **Ở batch 256, thêm GPU chỉ làm huấn luyện chậm đi, kể cả với NVLink.** Một A100 chỉ cần 0,36 ms
   mỗi bước, chưa bằng một nửa 0,85 ms của T4, nên chi phí allreduce cố định chiếm tỉ lệ còn lớn hơn
   (truyền thông không được che 29–37 % ở k=2 và 50–69 % ở k=4 qua NVLink, 83–89 % ở k=4 qua host).

@@ -1,5 +1,5 @@
 /*
- * tree.cu - the paper's method (Hegde & Usmani, Sec. 5):
+ * tree.cu - flat reduce-to-driver allreduce (Hegde & Usmani, Sec. 5, driver model):
  *           reduce all gradients to GPU 0 ("driver"), average, broadcast back.
  *
  *   1. GPU 0 waits for every GPU j's gradients to be ready.
@@ -10,8 +10,11 @@
  *   5. GPU 0 waits for the k-1 broadcast copies to finish, so the caller cannot
  *      overwrite grads[0] (e.g. the next backward pass) while a peer is still reading it.
  *
- * Every copy goes through GPU 0, so the cost is about 2(k-1)(alpha + n*beta),
- * which is the paper's O(L k) + O(k p / B). Every GPU ends with bitwise the same values.
+ * Every copy goes through GPU 0, so the cost is about 2(k-1)(alpha + n*beta). This alpha-beta
+ * form is ours; it equals the paper's summed message cost O(L k) + O(k p / B). The paper's
+ * BitTorrent aggregate sends these messages in log2 k parallel rounds; this flat version sends
+ * them one after another, so here the summed cost is also the time.
+ * Every GPU ends with bitwise the same values.
  */
 #include "ar_sync.h"
 

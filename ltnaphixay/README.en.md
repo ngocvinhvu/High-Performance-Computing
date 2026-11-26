@@ -61,7 +61,7 @@ Methods (one file each in `src/allreduce/`):
 | Method | How it works |
 |---|---|
 | `host_ref` | Copy every gradient to the CPU, average, copy back. Reference for correctness |
-| `tree` | The paper's method: reduce to GPU 0, average, broadcast |
+| `tree` | Reduce to GPU 0 (the driver, as in §5 of the paper), average, broadcast. Flat tree: GPU 0 talks to each GPU in turn, cost 2(k−1)(α + nβ), which equals the paper's summed message cost O(L·k) + O(k·p/B); the paper uses a BitTorrent aggregate (binomial tree, log₂k parallel rounds) |
 | `ring` | Reduce-scatter, then allgather (no chunk pipelining) |
 | `rd` | Recursive doubling; extra GPUs are folded in when k is not a power of two |
 | `--overlap` | Start the allreduce of layer 2 while layer 1's backward is still running |
@@ -167,8 +167,7 @@ Median time per allreduce, k = 2, ms ([`allreduce.csv`](runs/kaggle-final-2026-1
 | 16 MB | 11.970 | 3.787 | **3.608** | 3.747 |
 | 64 MB | 47.980 | 15.001 | **14.298** | 14.979 |
 
-Bus bandwidth at 64 MB: host_ref 1.40, tree 4.47, ring 4.69, rd 4.48 GB/s. A one-way peer copy
-reaches 9.9 GB/s (`runs/kaggle-2026-11-22/`).
+Bus bandwidth at 64 MB: host_ref 1.40, tree 4.47, ring 4.69, rd 4.48 GB/s.
 
 - **Small messages are latency-bound.** For 4–8 KB, two small copies through the CPU are slightly
   faster than any GPU method. Ring has a floor of about 0.053 ms because it runs more dependent
@@ -177,9 +176,10 @@ reaches 9.9 GB/s (`runs/kaggle-2026-11-22/`).
   1–2 MB. The model's 1.63 MB gradient is in this range.
 - **Large messages are bandwidth-bound and favour ring**, but only by 4–5 %. The CPU path is
   3.3× slower than the GPU methods here (1.4 vs 4.5–4.7 GB/s).
-- **All GPU methods reach about half the link rate.** Tree has to send the data one way and back,
-  so half is its limit. Ring and rd could use both directions at once but do not get further, which
-  suggests the two directions do not overlap and ring would need chunk pipelining.
+- **All three GPU methods level off at the same 4.5–4.7 GB/s**, so the limit is the link (PCIe
+  through the host bridge), not the algorithm. Ring and rd could use both directions at once but do
+  not get past tree, which suggests the two directions do not overlap and ring would need chunk
+  pipelining.
 - **Reproducible.** These numbers match the earlier 2-epoch run on another Kaggle machine within
   0.3 % for messages of 4 MB and up, and within 9 % for small messages.
 - With k = 2, the three GPU algorithms move the same amount of data. Their textbook differences
@@ -263,7 +263,7 @@ What this shows:
   O(L·k) term of O(L·k) + O(k·p/B). The 1.63 MB gradient sits in this latency-bound region, which is
   why rd and tree beat ring in training at batch 256 even over NVLink.
 - **Tree loses bandwidth as k grows** (93 → 51 GB/s over NVLink), because GPU 0 receives and sends
-  every message, as the paper's reduce-to-one-then-broadcast analysis predicts.
+  every message, as the flat tree's cost 2(k−1)(α + nβ) predicts: it grows linearly with k.
 - **At batch 256 more GPUs only slow training down, even with NVLink.** One A100 needs just 0.36 ms
   per step, less than half a T4's 0.85 ms, so the fixed allreduce cost is an even larger share
   (exposed communication 29–37 % at k=2 and 50–69 % at k=4 over NVLink, 83–89 % at k=4 via host).
