@@ -421,6 +421,27 @@ def build(template, out):
           R("bản C tuần tự + bản song song tự viết; bản tuần tự vừa là mốc tăng tốc, vừa là chuẩn kiểm tra tính đúng.", size=14)),
     ])
 
+    # 5b. Dữ liệu
+    s = content_slide(prs, "Dữ liệu: ngẫu nhiên để đo tốc độ, ảnh thật để đo độ chính xác",
+                      "Hai loại dữ liệu. Đo tốc độ (A, B): số ngẫu nhiên tự sinh với seed cố định, vì thời gian conv và nhân ma trận chỉ phụ "
+                      "thuộc kích thước, không phụ thuộc giá trị; kích thước lấy đúng như bài báo (ảnh xám 224×224). Bài báo không nêu tên "
+                      "bộ dữ liệu, chỉ nói ảnh xám 224×224 thuộc 40 lớp. Đo độ chính xác (C–F): MNIST, Fashion-MNIST, CIFAR-10, là các "
+                      "bộ nhỏ, chạy nhanh nên lặp lại được với nhiều seed.")
+    callout(s, 0.4, 1.05, 4.5, 1.6, "Đo tốc độ: dữ liệu ngẫu nhiên",
+            "Thời gian chỉ phụ thuộc kích thước: ảnh 224×224 thật hay nhiễu đều cần 67,7 triệu phép tính. Seed cố định nên tái lập được", size=13)
+    callout(s, 5.1, 1.05, 4.5, 1.6, "Đo độ chính xác: ảnh công khai",
+            "Bộ nhỏ 28×28 hoặc 32×32: mục tiêu là đo hành vi song song, chạy nhanh nên lặp lại được với nhiều seed", size=13)
+    table(s, 0.4, 2.85, 9.2, [
+        ["", "Dữ liệu", "Kích thước"],
+        ["A", "Tổng hợp (hàm băm splitmix64), CPU và GPU sinh cùng giá trị", "MLP H = 512–8192"],
+        ["B", "Ngẫu nhiên, seed cố định, đúng kích thước bài báo", "Ảnh xám 224×224; ma trận n = 256–16384"],
+        ["C", "MNIST (chữ số viết tay, 28×28); CIFAR-10 (ảnh màu 32×32)", "60.000 / 10.000; CIFAR-10 20.000 ảnh"],
+        ["D", "Fashion-MNIST (quần áo, giày, túi; 28×28)", "7.000 train / 1.000 val / 2.000 test"],
+        ["E", "MNIST", "60.000 train / 10.000 test"],
+        ["F", "Fashion-MNIST, chia giống D", "7.000 / 1.000 / 2.000"],
+    ], col_w=[0.4, 5.2, 3.6], font=13, header_font=13, row_h=0.42, bold_first_col=True, name="Bảng dữ liệu")
+    caption(s, 0.4, 6.05, 9.2, "Bài báo gốc: ảnh xám 224×224 thuộc 40 lớp, không nêu tên bộ dữ liệu.", size=12)
+
     # 6. Mô hình toán
     s = content_slide(prs, "Mô hình toán",
                       "Trái: vì sao Sync SGD phải cho đúng kết quả tuần tự, và vì sao conv tuyến tính theo batch còn FC "

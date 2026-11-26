@@ -258,6 +258,28 @@ Quy trình chung: ghi **dự đoán trước khi chạy**, lưu log và CSV/JSON
 plan) cùng kết quả. Phần cứng khác nhau giữa các cấu hình, nên báo cáo chỉ so **tỉ lệ** (tăng tốc, xu hướng) giữa các cấu hình, không
 so thời gian tuyệt đối.
 
+### Dữ liệu
+
+Nhóm dùng hai loại dữ liệu, tùy mục đích của phép đo.
+
+**Đo tốc độ: dữ liệu ngẫu nhiên do chương trình tự sinh, với seed cố định.** Thời gian của conv hay của nhân ma trận chỉ phụ thuộc
+**kích thước** dữ liệu, không phụ thuộc giá trị: một ảnh 224×224 dù là ảnh thật hay nhiễu vẫn cần đúng khoảng 67,7 triệu phép tính.
+Seed cố định giúp mỗi lần chạy ra đúng cùng dữ liệu và không phải tải bộ dữ liệu. Kích thước được lấy đúng theo bài báo. Bài báo
+huấn luyện trên ảnh xám 224×224 thuộc 40 lớp nhưng không nêu tên bộ dữ liệu.
+
+**Đo độ chính xác: bộ dữ liệu ảnh công khai.** Khi cần biết mô hình có học đúng, có hội tụ hay không, nhóm dùng ảnh thật. Các bộ
+nhỏ (ảnh 28×28 hoặc 32×32) được chọn vì mục tiêu là đo hành vi song song chứ không phải đạt độ chính xác cao nhất, và chạy nhanh
+nên lặp lại được với nhiều seed.
+
+| Cấu hình | Dữ liệu | Kích thước |
+|---|---|---|
+| A | Tổng hợp, sinh bằng hàm băm splitmix64 (CPU và GPU sinh đúng cùng giá trị) | MLP H = 512–8192, batch 128–2048 |
+| B | Ngẫu nhiên, seed cố định, kích thước đúng như bài báo | Ảnh xám 224×224, 96 bộ lọc 11×11; ma trận n = 256–16384 |
+| C | **MNIST** (chữ số viết tay 0–9, ảnh xám 28×28); **CIFAR-10** (ảnh màu 32×32, 10 lớp); dữ liệu tổng hợp để chạy thử | MNIST 60.000 train / 10.000 test; CIFAR-10 20.000 ảnh |
+| D | **Fashion-MNIST** (10 loại quần áo, giày, túi; ảnh xám 28×28) | 10.000 ảnh tập t10k: 7.000 train / 1.000 validation / 2.000 test |
+| E | **MNIST** | 60.000 train / 10.000 test |
+| F | **Fashion-MNIST**, chia giống D | 7.000 / 1.000 / 2.000 |
+
 ## 5. Kết quả
 
 ### 5.1 §3: CPU so với GPU
@@ -472,6 +494,8 @@ dùng hết băng thông.
 
 - **Một máy cho mỗi phép đo.** MPI chạy trên một node qua shared memory, đa GPU nằm trong một máy. Chưa đo qua mạng giữa nhiều máy,
   nên "băng thông" trong mô hình α–β ở phần MPI thực chất là băng thông bộ nhớ.
+- **Dữ liệu nhỏ hoặc tổng hợp:** các phép đo tốc độ dùng dữ liệu ngẫu nhiên (không ảnh hưởng thời gian); các phép đo độ chính
+  xác dùng MNIST, Fashion-MNIST, CIFAR-10, nhỏ hơn nhiều so với ảnh 224×224 của bài báo.
 - **Mô hình nhỏ** ở các thí nghiệm song song dữ liệu (LeNet 61.706 tham số, CNN 54.314 tham số, MLP 407.050 tham số): truyền thông
   tương đối rẻ, kết luận về tỉ lệ truyền thông có thể khác với mô hình lớn.
 - **Số lần lặp ít:** 1 lần chạy mỗi cấu hình ở phần song song mô hình, 2–5 seed ở các thí nghiệm độ chính xác. Chênh lệch vài phần trăm
