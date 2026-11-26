@@ -353,7 +353,7 @@ def build(template, out):
     s = content_slide(prs, "Mục lục", "Bốn phần: bài toán và mô hình toán, thiết kế song song, kết quả theo từng mục "
                                      "của bài báo, đối chiếu và kết luận. Khoảng 15 phút.")
     items = [
-        ("I", "Bài toán và mô hình toán", "Tổng quan bài báo gốc · năm cấu hình thí nghiệm · SGD, im2col, mô hình α–β"),
+        ("I", "Bài toán và mô hình toán", "Tổng quan bài báo gốc · sáu cấu hình thí nghiệm · SGD, im2col, mô hình α–β"),
         ("II", "Thiết kế, mã nguồn và phương pháp đo", "Bốn lớp song song · code chính · kiểm tra tính đúng · cách bấm giờ và chỉ số"),
         ("III", "Kết quả", "§3 CPU so với GPU · §5 song song dữ liệu và truyền thông · §2 song song mô hình"),
         ("IV", "Đối chiếu và kết luận", "Nhận định nào đúng, nhận định nào chỉ đúng một phần"),
@@ -394,7 +394,7 @@ def build(template, out):
     # 5. Bài toán
     s = content_slide(prs, "Bài toán: chia việc huấn luyện ra nhiều đơn vị tính",
                       "Bài báo nêu ba nhóm nhận định nhưng chỉ đo §3 bằng Caffe; §5 chỉ phân tích O(.), §2 không đo. "
-                      "Nhóm chia đề tài thành năm cấu hình A–E. Mỗi cấu hình có bản C tuần tự và bản MPI/CUDA tự viết, "
+                      "Nhóm chia đề tài thành sáu cấu hình A–F. Mỗi cấu hình có bản C tuần tự và bản MPI/CUDA tự viết, "
                       "không dùng cuBLAS, cuDNN, NCCL hay framework.")
     cards = [
         ("§3  CPU so với GPU", "GPU nhanh hơn ≈ 40×, tăng theo batch và kích thước ma trận", "Bài đo bằng Caffe"),
@@ -414,8 +414,9 @@ def build(template, out):
         ["C", "CNN: 4 phương pháp của §5, 6 allreduce", "i5-8257U; i5-12600K + RTX 2060", "MPI, OpenMP, CUDA"],
         ["D", "CNN: tới cùng độ chính xác, gradient trễ", "i7-13620H + RTX 4060", "MPI, CUDA"],
         ["E", "Allreduce tự viết trên nhiều GPU", "2× T4; 4× A100 (NVLink)", "CUDA"],
-    ], col_w=[0.45, 4.0, 3.0, 1.75], font=13, header_font=13, row_h=0.36, bold_first_col=True, name="Bảng cấu hình")
-    text(s, 0.4, 5.85, 9.2, 0.8, [
+        ["F", "CNN: tỉ trọng GEMM, CPU/GPU, bus luồng", "i7-6820HQ + Quadro M620", "Luồng, CUDA"],
+    ], col_w=[0.45, 4.0, 3.0, 1.75], font=13, header_font=13, row_h=0.34, bold_first_col=True, name="Bảng cấu hình")
+    text(s, 0.4, 6.0, 9.2, 0.7, [
         P(R("Mỗi cấu hình: ", size=14, bold=True, color=DARKRED),
           R("bản C tuần tự + bản song song tự viết; bản tuần tự vừa là mốc tăng tốc, vừa là chuẩn kiểm tra tính đúng.", size=14)),
     ])
@@ -468,7 +469,7 @@ def build(template, out):
         ("Kernel tự viết", "B, A, E", [
             "GEMM: naive → tile shared memory → chia khối thanh ghi (T4: 453 → 1.806 GFLOP/s)",
             "im2col một kernel; matvec mỗi warp một hàng, float4, warp shuffle"]),
-        ("Song song dữ liệu MPI", "C, D", [
+        ("Song song dữ liệu MPI", "C, D; F trên luồng", [
             "Sync SGD, Parallel SGD + ShuffleSGD, ADMM, Downpour (parameter server, Isend/Irecv)",
             "6 allreduce trên giao tiếp điểm–điểm: ring, rd, tree, naive…"]),
         ("Allreduce trên nhiều GPU", "E", [
@@ -489,7 +490,7 @@ def build(template, out):
              [P(R(b, size=14), bullet=True, after=6, line=0.95) for b in bullets])
 
     # 8b. Tổng quan mã nguồn
-    s = content_slide(prs, "Mã nguồn: năm chương trình, ≈ 13.400 dòng C/CUDA",
+    s = content_slide(prs, "Mã nguồn: sáu chương trình, ≈ 15.700 dòng C/CUDA",
                       "Mỗi cấu hình có bản C tuần tự một luồng và bản song song. Không dùng cuBLAS, cuDNN, NCCL, Thrust hay BLAS: "
                       "chỉ libc/libm, giao tiếp điểm–điểm của MPI và CUDA runtime. Ngoại lệ ở cấu hình C: có lựa chọn cuBLAS và "
                       "MPI_Allreduce để làm mốc so sánh. Số dòng đếm trên tệp .c, .cu, .h, .cpp.")
@@ -500,12 +501,13 @@ def build(template, out):
         ["C", "seq_train.c", "src/train, src/comm (MPI), cpu_kernels.c (OpenMP), cuda_kernels.cu", "7.721", "make · scripts/build.sh (CMake)"],
         ["D", "train_seq.c", "train_mpi.c (MPI), kernels.cu (CUDA, NVRTC)", "1.315", "python build.py"],
         ["E", "mlp_seq.c", "train_dp.cu, allreduce/{tree,ring,rd}.cu, bench_allreduce.cu", "1.567", "make seq · make ARCH=sm_75"],
-    ], col_w=[0.4, 1.35, 4.15, 0.75, 2.55], font=12, header_font=12, row_h=0.5, bold_first_col=True, name="Bảng mã nguồn")
-    callout(s, 0.4, 4.35, 2.95, 2.25, "Không thư viện tính toán",
-            "Chỉ libc/libm, MPI điểm–điểm (Send/Recv, Sendrecv, Isend/Irecv) và CUDA runtime (malloc, stream, event, memcpy)")
-    callout(s, 3.52, 4.35, 2.95, 2.25, "Cùng mô hình hai bản",
+        ["F", "cpu_runner.c", "dist_worker.c (luồng, bus truyền tin tự viết), gpu_kernels.cu (NVRTC)", "2.361", "python build_engine.py"],
+    ], col_w=[0.4, 1.35, 4.15, 0.75, 2.55], font=12, header_font=12, row_h=0.47, bold_first_col=True, name="Bảng mã nguồn")
+    callout(s, 0.4, 4.55, 2.95, 2.1, "Không thư viện tính toán",
+            "Chỉ libc/libm, MPI điểm–điểm, luồng hệ điều hành và CUDA runtime/driver (malloc, stream, event, memcpy)")
+    callout(s, 3.52, 4.55, 2.95, 2.1, "Cùng mô hình hai bản",
             "Bản tuần tự và song song dùng chung khởi tạo, thứ tự mẫu và luật cập nhật, nên so được từng giá trị")
-    callout(s, 6.64, 4.35, 2.95, 2.25, "Tái lập được",
+    callout(s, 6.64, 4.55, 2.95, 2.1, "Tái lập được",
             "README gốc ghi lệnh build và chạy cả hai bản; script chạy thí nghiệm và log gốc nằm cạnh mã")
 
     # 8c. GEMM
@@ -660,7 +662,7 @@ def build(template, out):
     s = content_slide(prs, "Kiểm tra tính đúng trước khi đo",
                       "Mọi phép đo chỉ chạy sau khi bản song song khớp bản tuần tự. Sai số đều ở mức làm tròn số thực. "
                       "Ở cấu hình E, các bản sao tham số trên mọi GPU giống nhau từng bit.")
-    stat(s, 0.4, 1.1, 2.9, "5 / 5", "cấu hình khớp bản C tuần tự đến sai số làm tròn", big_size=40, h=1.6)
+    stat(s, 0.4, 1.1, 2.9, "6 / 6", "cấu hình khớp bản C tuần tự đến sai số làm tròn", big_size=40, h=1.6)
     stat(s, 0.4, 2.9, 2.9, "0 lỗi", "105 kiểm tra tự động ở cấu hình C (CTest, gradient, CUDA so với CPU)", big_size=40, h=1.6)
     stat(s, 0.4, 4.7, 2.9, "Từng bit", "bản sao tham số giống nhau trên mọi GPU (cấu hình E)", big_size=34, h=1.6)
     table(s, 3.55, 1.1, 6.05, [
@@ -670,8 +672,9 @@ def build(template, out):
         ["C", "Sync SGD k = 2, 4 so với tuần tự", "5,7·10⁻⁸"],
         ["D", "Gradient so với sai phân hữu hạn; CUDA so với C", "8,9·10⁻⁷; 1,8·10⁻⁷"],
         ["E", "5.670 lần chạy với thứ tự stream ngẫu nhiên; 2 GPU so với 1 GPU", "loss 2,3·10⁻⁵ sau 10 epoch"],
-    ], col_w=[0.4, 3.25, 2.4], font=13, header_font=13, row_h=0.62, bold_first_col=True, name="Bảng tính đúng")
-    caption(s, 3.55, 5.0, 6.05, "Sync SGD trên k tiến trình bằng đúng SGD tuần tự (mục I), nên sai lệch chỉ đến từ thứ tự cộng số thực.", size=12)
+        ["F", "Gradient so với sai phân hữu hạn; im2col so với conv trực tiếp; GPU so với CPU", "1,3·10⁻⁷; 1,0·10⁻¹⁶; 1,1·10⁻⁷"],
+    ], col_w=[0.4, 3.25, 2.4], font=13, header_font=13, row_h=0.6, bold_first_col=True, name="Bảng tính đúng")
+    caption(s, 3.55, 5.6, 6.05, "Sync SGD trên k tiến trình bằng đúng SGD tuần tự (mục I), nên sai lệch chỉ đến từ thứ tự cộng số thực.", size=12)
 
     # 9b. Phương pháp đo: bấm giờ
     s = content_slide(prs, "Phương pháp benchmark: bấm giờ thế nào",
@@ -686,7 +689,8 @@ def build(template, out):
         ["C", "Đồng hồ 10 pha mỗi rank (forward, backward, chờ, comm…)", "theo cấu hình YAML", "3 lần chạy (scaling), 2 seed (độ chính xác)", "manifest: power plan, tải nền, commit"],
         ["D", "MPI_Wtime; epoch = rank chậm nhất (MPI_Reduce MAX)", "–", "3 lần (scaling), 5–10 seed (độ chính xác)", "thời gian chờ/truyền riêng"],
         ["E", "bench: đồng hồ host + đồng bộ mọi stream; train: cudaEvent", "5 lần (bench); bỏ epoch 1", "bench 20 lần, trung vị; 3 lần chạy", "ma trận P2P, xung nhịp, hạ xung"],
-    ], col_w=[0.4, 2.85, 1.85, 2.2, 1.9], font=11, header_font=12, row_h=0.78, bold_first_col=True, name="Bảng bấm giờ")
+        ["F", "QueryPerformanceCounter; cuCtxSynchronize trước và sau", "–", "trung bình nhiều vòng; trung vị 3 lần chạy", "ghim mỗi worker vào một nhân vật lý"],
+    ], col_w=[0.4, 2.85, 1.85, 2.2, 1.9], font=11, header_font=12, row_h=0.67, bold_first_col=True, name="Bảng bấm giờ")
     callout(s, 0.4, 5.85, 4.5, 0.85, "Dữ liệu đã nằm trên thiết bị", "trừ khi ghi rõ \"tính cả chép host↔device\"", size=12)
     callout(s, 5.1, 5.85, 4.5, 0.85, "Thời gian huấn luyện", "không tính lúc đánh giá; epoch 1 có khởi động bị loại (E)", size=12)
 
@@ -730,6 +734,55 @@ def build(template, out):
     stat(s, 0.4, 5.55, 2.95, "23,3×", "conv, T4, kernel tự viết (B)")
     stat(s, 3.52, 5.55, 2.95, "40–56×", "conv, RTX 4060, batch ≥ 64 (D)")
     stat(s, 6.64, 5.55, 2.95, "0,51×", "FC n = 256: GPU thua CPU (D)")
+
+    # 11b. §3.1 GEMM là phần nặng nhất
+    s = content_slide(prs, "§3.1: nhân ma trận là phần nặng nhất của CNN",
+                      "Bài báo viết ở §3.1 rằng nhân ma trận là phần tốn tính toán nhất. Cấu hình F đo trên CNN 54.314 tham số: GEMM chiếm 99% số "
+                      "phép tính, nhưng chỉ 69% thời gian trên CPU và 63% trên GPU, vì im2col và các phép theo phần tử bị giới hạn bởi băng thông. "
+                      "Tính cả im2col thì khoảng 87–94%. Chuyển conv trực tiếp sang im2col + GEMM nhanh hơn 3,1–3,5× trên CPU.")
+    cd = CategoryChartData()
+    cd.categories = ["GPU (Quadro M620)", "CPU 1 nhân (i7-6820HQ)"]
+    cd.add_series("GEMM", (63.0, 69.0))
+    cd.add_series("im2col", (31.2, 18.2))
+    cd.add_series("Pool, ReLU, softmax, SGD", (5.7, 12.8))
+    gf = s.shapes.add_chart(XL_CHART_TYPE.BAR_STACKED, Inches(0.4), Inches(1.0), Inches(9.2), Inches(2.9), cd)
+    gf.name = "Biểu đồ phân rã GEMM"
+    ch = gf.chart
+    ch.has_title = True
+    ch.chart_title.text_frame.text = "Phân rã thời gian một bước huấn luyện, batch 256 (%)"
+    style_run(ch.chart_title.text_frame.paragraphs[0].runs[0], size=13, bold=True, color=INK)
+    ch.has_legend = True
+    ch.legend.include_in_layout = False
+    ch.legend.position = 2  # bottom
+    ch.legend.font.size = Pt(12)
+    ch.legend.font.name = BODY_FONT
+    plot = ch.plots[0]
+    plot.gap_width = 45
+    plot.overlap = 100
+    plot.has_data_labels = True
+    plot.data_labels.number_format = '0.0'
+    plot.data_labels.number_format_is_linked = False
+    plot.data_labels.position = XL_LABEL_POSITION.CENTER
+    plot.data_labels.font.size = Pt(12)
+    plot.data_labels.font.name = BODY_FONT
+    plot.data_labels.font.color.rgb = WHITE
+    for ser, col in zip(plot.series, (RED, GOLD, RGBColor(0x8C, 0x8C, 0x8C))):
+        ser.format.fill.solid()
+        ser.format.fill.fore_color.rgb = col
+        ser.format.line.color.rgb = WHITE
+    va = ch.value_axis
+    va.minimum_scale, va.maximum_scale = 0, 100
+    va.has_major_gridlines = False
+    va.visible = False
+    ch.category_axis.tick_labels.font.size = Pt(12)
+    ch.category_axis.tick_labels.font.name = BODY_FONT
+    stat(s, 0.4, 4.15, 2.95, "99,2%", "số phép tính của CNN là GEMM (batch 256, F)", big_size=32, h=1.4)
+    stat(s, 3.52, 4.15, 2.95, "3,1–3,5×", "im2col + GEMM nhanh hơn conv trực tiếp trên CPU (F)", big_size=30, h=1.4)
+    stat(s, 6.64, 4.15, 2.95, "94,5–95,5%", "thời gian kernel GEMM khi huấn luyện MLP trên T4 (E)", big_size=28, h=1.4)
+    text(s, 0.4, 5.75, 9.2, 0.9, [
+        P(R("Kết luận: ", size=14, bold=True, color=DARKRED),
+          R("đúng như §3.1. Tối ưu GEMM và im2col là tối ưu gần 90% thời gian mỗi bước; phần còn lại bị giới hạn bởi băng thông bộ nhớ.", size=14)),
+    ])
 
     # 12. §5 scaling
     s = content_slide(prs, "§5: song song dữ liệu trên một máy CPU bão hòa ở ≈ 3,5×",
@@ -911,14 +964,15 @@ def build(template, out):
         ["Nhận định của bài", "Kết quả của nhóm", "Đánh giá"],
         ["§1.2 q nhân ≈ 1/q thời gian (động lực)", "6–10 tiến trình trên một máy: 3,1–3,5×", [no]],
         ["§2 Model parallelism chỉ để vừa bộ nhớ", "M = 1 cho 1,00×; 103 GB chỉ chạy trên ≥ 2 GPU", [ok]],
+        ["§3.1 GEMM là phần nặng nhất", "99% FLOP; 59–69% thời gian (87–94% kể cả im2col)", [ok]],
         ["§3 Conv tuyến tính theo batch", "R² ≥ 0,999 trên CPU và GPU", [ok]],
-        ["§3 GPU nhanh hơn ≈ 40×", "23× đến 56×, < 1× với ma trận nhỏ", [part]],
+        ["§3 GPU nhanh hơn ≈ 40×", "2,4× (M620) đến 56×; < 1× với ma trận nhỏ", [part]],
         ["§3 FC O(n²), speedup tăng theo n", "Đúng; giới hạn bởi băng thông bộ nhớ", [ok]],
         ["§5 Allreduce gom-rồi-phát", "Đúng dạng chi phí; ring tốt hơn khi gradient lớn", [part]],
         ["§5.1.1 Parallel SGD cần trộn dữ liệu", "77,7% → 97,9% nhờ ShuffleSGD", [ok]],
         ["§5.1.2 ADMM tránh trộn dữ liệu", "Tốt hơn PSGD mỗi epoch, kém ShuffleSGD", [part]],
         ["§5.2 Bất đồng bộ nhanh hơn", "Chậm hơn 1,46–3,31× khi so ở cùng độ chính xác", [no]],
-    ], col_w=[3.35, 4.35, 1.5], font=13, header_font=13, row_h=0.47, name="Bảng đối chiếu")
+    ], col_w=[3.35, 4.35, 1.5], font=13, header_font=13, row_h=0.43, name="Bảng đối chiếu")
     caption(s, 0.4, 6.05, 9.2, "Chưa kiểm chứng: Downpour không còn tăng tốc khi số worker vượt T/τ.", size=13)
 
     # 18. Kết luận
@@ -926,7 +980,7 @@ def build(template, out):
                       "Tóm tắt ba ý và bốn hướng tiếp theo. Sau đó mời hỏi đáp.")
     text(s, 0.4, 1.05, 5.4, 0.4, [P(R("Kết luận", size=18, bold=True, color=DARKRED, font=TITLE_FONT))])
     concl = [
-        ("Tự cài đặt đủ", "kernel, 4 phương pháp của §5, 6 allreduce CPU + 3 GPU, pipeline và tensor parallel; mọi bản song song khớp bản tuần tự"),
+        ("Tự cài đặt đủ", "kernel, 4 phương pháp của §5, allreduce trên MPI, bus luồng và GPU, pipeline và tensor parallel; mọi bản song song khớp bản tuần tự"),
         ("Định tính đúng", "conv tuyến tính theo batch, FC O(n²), Parallel SGD cần trộn dữ liệu, chia mô hình chỉ để vừa bộ nhớ"),
         ("Định lượng thay đổi", "GPU/CPU từ < 1× tới 56×; nhiều GPU chỉ có lợi khi tính toán mỗi bước lớn hơn truyền thông"),
     ]

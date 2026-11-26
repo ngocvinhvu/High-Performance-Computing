@@ -28,6 +28,7 @@ Thành phần theo yêu cầu của đề:
 | C | CNN: Sync SGD, Parallel SGD, ADMM, Downpour, 6 allreduce (§5) | `tuannn/code/sequential/seq_train.c` | `tuannn/code/src/` (MPI, OpenMP, CUDA) |
 | D | CNN: tới cùng độ chính xác, gradient trễ (§5.2) | `thinhnd/cnn/src/seq/train_seq.c` | `thinhnd/cnn/src/mpi/train_mpi.c` (MPI), `thinhnd/cnn/src/cuda/` (CUDA) |
 | E | Allreduce tự viết trên nhiều GPU (§5) | `ltnaphixay/src/seq/mlp_seq.c` | `ltnaphixay/src/cuda/`, `ltnaphixay/src/allreduce/` (CUDA) |
+| F | CNN: tỉ trọng GEMM (§3.1), CPU/GPU từng lớp, allreduce trên bus luồng, gradient trễ | `ducnm/src/cpu_runner.c` | `ducnm/src/dist_worker.c` (luồng, bus truyền tin tự viết), `ducnm/src/gpu_runner.c` + `ducnm/src/gpu_kernels.cu` (CUDA, NVRTC) |
 
 Kết quả đo gốc (log, CSV, JSON) nằm trong thư mục `results/`, `runs/` hoặc `experiments/results/` của từng phần; nguồn của
 từng con số trong báo cáo ghi ở Phụ lục B của báo cáo.

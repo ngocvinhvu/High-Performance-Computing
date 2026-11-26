@@ -1,0 +1,9 @@
+bin/
+data/
+__pycache__/
+benchmarks/__pycache__/
+*.pyc
+*.exe
+*.pdb
+*.obj
+*.o
