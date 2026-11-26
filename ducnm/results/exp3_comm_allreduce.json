@@ -1,0 +1,749 @@
+{
+  "hockney_fit": {
+    "alpha_us": 15.8775,
+    "beta_us_per_byte": 0.0011131110787391662,
+    "bandwidth_GBps": 0.8983829368877647
+  },
+  "allreduce": [
+    {
+      "method": "ring",
+      "workers": 2,
+      "msg_bytes": 4096,
+      "latency_us": 31.755,
+      "pred_us": 36.31430297851563
+    },
+    {
+      "method": "tree",
+      "workers": 2,
+      "msg_bytes": 4096,
+      "latency_us": 22.227,
+      "pred_us": 40.873605957031245
+    },
+    {
+      "method": "rd",
+      "workers": 2,
+      "msg_bytes": 4096,
+      "latency_us": 10.41,
+      "pred_us": 20.436802978515622
+    },
+    {
+      "method": "naive",
+      "workers": 2,
+      "msg_bytes": 4096,
+      "latency_us": 18.795,
+      "pred_us": 40.873605957031245
+    },
+    {
+      "method": "ring",
+      "workers": 2,
+      "msg_bytes": 16384,
+      "latency_us": 16.107,
+      "pred_us": 49.992211914062494
+    },
+    {
+      "method": "tree",
+      "workers": 2,
+      "msg_bytes": 16384,
+      "latency_us": 41.425,
+      "pred_us": 68.229423828125
+    },
+    {
+      "method": "rd",
+      "workers": 2,
+      "msg_bytes": 16384,
+      "latency_us": 9.68,
+      "pred_us": 34.1147119140625
+    },
+    {
+      "method": "naive",
+      "workers": 2,
+      "msg_bytes": 16384,
+      "latency_us": 30.09,
+      "pred_us": 68.229423828125
+    },
+    {
+      "method": "ring",
+      "workers": 2,
+      "msg_bytes": 65536,
+      "latency_us": 33.64,
+      "pred_us": 104.70384765624999
+    },
+    {
+      "method": "tree",
+      "workers": 2,
+      "msg_bytes": 65536,
+      "latency_us": 190.515,
+      "pred_us": 177.6526953125
+    },
+    {
+      "method": "rd",
+      "workers": 2,
+      "msg_bytes": 65536,
+      "latency_us": 44.152,
+      "pred_us": 88.82634765625
+    },
+    {
+      "method": "naive",
+      "workers": 2,
+      "msg_bytes": 65536,
+      "latency_us": 153.313,
+      "pred_us": 177.6526953125
+    },
+    {
+      "method": "ring",
+      "workers": 2,
+      "msg_bytes": 217256,
+      "latency_us": 169.142,
+      "pred_us": 273.5850605225563
+    },
+    {
+      "method": "tree",
+      "workers": 2,
+      "msg_bytes": 217256,
+      "latency_us": 507.922,
+      "pred_us": 515.4151210451126
+    },
+    {
+      "method": "rd",
+      "workers": 2,
+      "msg_bytes": 217256,
+      "latency_us": 120.367,
+      "pred_us": 257.7075605225563
+    },
+    {
+      "method": "naive",
+      "workers": 2,
+      "msg_bytes": 217256,
+      "latency_us": 514.868,
+      "pred_us": 515.4151210451126
+    },
+    {
+      "method": "ring",
+      "workers": 2,
+      "msg_bytes": 1048576,
+      "latency_us": 260.293,
+      "pred_us": 1198.9365625
+    },
+    {
+      "method": "tree",
+      "workers": 2,
+      "msg_bytes": 1048576,
+      "latency_us": 1146.173,
+      "pred_us": 2366.118125
+    },
+    {
+      "method": "rd",
+      "workers": 2,
+      "msg_bytes": 1048576,
+      "latency_us": 780.84,
+      "pred_us": 1183.0590625
+    },
+    {
+      "method": "naive",
+      "workers": 2,
+      "msg_bytes": 1048576,
+      "latency_us": 1302.8,
+      "pred_us": 2366.118125
+    },
+    {
+      "method": "ring",
+      "workers": 2,
+      "msg_bytes": 4194304,
+      "latency_us": 4219.68,
+      "pred_us": 4700.48125
+    },
+    {
+      "method": "tree",
+      "workers": 2,
+      "msg_bytes": 4194304,
+      "latency_us": 4444.46,
+      "pred_us": 9369.207499999999
+    },
+    {
+      "method": "rd",
+      "workers": 2,
+      "msg_bytes": 4194304,
+      "latency_us": 4143.72,
+      "pred_us": 4684.603749999999
+    },
+    {
+      "method": "naive",
+      "workers": 2,
+      "msg_bytes": 4194304,
+      "latency_us": 4987.86,
+      "pred_us": 9369.207499999999
+    },
+    {
+      "method": "ring",
+      "workers": 2,
+      "msg_bytes": 16777216,
+      "latency_us": 18706.66,
+      "pred_us": 18706.66
+    },
+    {
+      "method": "tree",
+      "workers": 2,
+      "msg_bytes": 16777216,
+      "latency_us": 20763.56,
+      "pred_us": 37381.564999999995
+    },
+    {
+      "method": "rd",
+      "workers": 2,
+      "msg_bytes": 16777216,
+      "latency_us": 20190.94,
+      "pred_us": 18690.782499999998
+    },
+    {
+      "method": "naive",
+      "workers": 2,
+      "msg_bytes": 16777216,
+      "latency_us": 22224.4,
+      "pred_us": 37381.564999999995
+    },
+    {
+      "method": "ring",
+      "workers": 4,
+      "msg_bytes": 4096,
+      "latency_us": 75.967,
+      "pred_us": 102.10395446777343
+    },
+    {
+      "method": "tree",
+      "workers": 4,
+      "msg_bytes": 4096,
+      "latency_us": 45.678,
+      "pred_us": 81.74721191406249
+    },
+    {
+      "method": "rd",
+      "workers": 4,
+      "msg_bytes": 4096,
+      "latency_us": 10.93,
+      "pred_us": 40.873605957031245
+    },
+    {
+      "method": "naive",
+      "workers": 4,
+      "msg_bytes": 4096,
+      "latency_us": 19.835,
+      "pred_us": 122.62081787109373
+    },
+    {
+      "method": "ring",
+      "workers": 4,
+      "msg_bytes": 16384,
+      "latency_us": 72.668,
+      "pred_us": 122.62081787109375
+    },
+    {
+      "method": "tree",
+      "workers": 4,
+      "msg_bytes": 16384,
+      "latency_us": 84.457,
+      "pred_us": 136.45884765625
+    },
+    {
+      "method": "rd",
+      "workers": 4,
+      "msg_bytes": 16384,
+      "latency_us": 34.655,
+      "pred_us": 68.229423828125
+    },
+    {
+      "method": "naive",
+      "workers": 4,
+      "msg_bytes": 16384,
+      "latency_us": 62.65,
+      "pred_us": 204.68827148437498
+    },
+    {
+      "method": "ring",
+      "workers": 4,
+      "msg_bytes": 65536,
+      "latency_us": 122.095,
+      "pred_us": 204.68827148437498
+    },
+    {
+      "method": "tree",
+      "workers": 4,
+      "msg_bytes": 65536,
+      "latency_us": 250.16,
+      "pred_us": 355.305390625
+    },
+    {
+      "method": "rd",
+      "workers": 4,
+      "msg_bytes": 65536,
+      "latency_us": 147.122,
+      "pred_us": 177.6526953125
+    },
+    {
+      "method": "naive",
+      "workers": 4,
+      "msg_bytes": 65536,
+      "latency_us": 344.352,
+      "pred_us": 532.9580859375
+    },
+    {
+      "method": "ring",
+      "workers": 4,
+      "msg_bytes": 217256,
+      "latency_us": 189.723,
+      "pred_us": 458.0100907838344
+    },
+    {
+      "method": "tree",
+      "workers": 4,
+      "msg_bytes": 217256,
+      "latency_us": 596.242,
+      "pred_us": 1030.8302420902253
+    },
+    {
+      "method": "rd",
+      "workers": 4,
+      "msg_bytes": 217256,
+      "latency_us": 537.08,
+      "pred_us": 515.4151210451126
+    },
+    {
+      "method": "naive",
+      "workers": 4,
+      "msg_bytes": 217256,
+      "latency_us": 643.712,
+      "pred_us": 1546.2453631353378
+    },
+    {
+      "method": "ring",
+      "workers": 4,
+      "msg_bytes": 1048576,
+      "latency_us": 2460.0,
+      "pred_us": 1846.03734375
+    },
+    {
+      "method": "tree",
+      "workers": 4,
+      "msg_bytes": 1048576,
+      "latency_us": 2831.453,
+      "pred_us": 4732.23625
+    },
+    {
+      "method": "rd",
+      "workers": 4,
+      "msg_bytes": 1048576,
+      "latency_us": 3772.96,
+      "pred_us": 2366.118125
+    },
+    {
+      "method": "naive",
+      "workers": 4,
+      "msg_bytes": 1048576,
+      "latency_us": 2573.133,
+      "pred_us": 7098.354375
+    },
+    {
+      "method": "ring",
+      "workers": 4,
+      "msg_bytes": 4194304,
+      "latency_us": 9987.82,
+      "pred_us": 7098.354375
+    },
+    {
+      "method": "tree",
+      "workers": 4,
+      "msg_bytes": 4194304,
+      "latency_us": 13261.88,
+      "pred_us": 18738.414999999997
+    },
+    {
+      "method": "rd",
+      "workers": 4,
+      "msg_bytes": 4194304,
+      "latency_us": 15981.38,
+      "pred_us": 9369.207499999999
+    },
+    {
+      "method": "naive",
+      "workers": 4,
+      "msg_bytes": 4194304,
+      "latency_us": 11585.48,
+      "pred_us": 28107.622499999998
+    },
+    {
+      "method": "ring",
+      "workers": 4,
+      "msg_bytes": 16777216,
+      "latency_us": 41392.4,
+      "pred_us": 28107.622499999998
+    },
+    {
+      "method": "tree",
+      "workers": 4,
+      "msg_bytes": 16777216,
+      "latency_us": 53736.94,
+      "pred_us": 74763.12999999999
+    },
+    {
+      "method": "rd",
+      "workers": 4,
+      "msg_bytes": 16777216,
+      "latency_us": 71464.82,
+      "pred_us": 37381.564999999995
+    },
+    {
+      "method": "naive",
+      "workers": 4,
+      "msg_bytes": 16777216,
+      "latency_us": 49372.14,
+      "pred_us": 112144.69499999998
+    },
+    {
+      "method": "ring",
+      "workers": 8,
+      "msg_bytes": 4096,
+      "latency_us": 197.462,
+      "pred_us": 230.26378021240234
+    },
+    {
+      "method": "tree",
+      "workers": 8,
+      "msg_bytes": 4096,
+      "latency_us": 66.887,
+      "pred_us": 122.62081787109373
+    },
+    {
+      "method": "rd",
+      "workers": 8,
+      "msg_bytes": 4096,
+      "latency_us": 31.483,
+      "pred_us": 61.31040893554687
+    },
+    {
+      "method": "naive",
+      "workers": 8,
+      "msg_bytes": 4096,
+      "latency_us": 42.503,
+      "pred_us": 286.1152416992187
+    },
+    {
+      "method": "ring",
+      "workers": 8,
+      "msg_bytes": 16384,
+      "latency_us": 198.102,
+      "pred_us": 254.20012084960936
+    },
+    {
+      "method": "tree",
+      "workers": 8,
+      "msg_bytes": 16384,
+      "latency_us": 102.108,
+      "pred_us": 204.68827148437498
+    },
+    {
+      "method": "rd",
+      "workers": 8,
+      "msg_bytes": 16384,
+      "latency_us": 53.585,
+      "pred_us": 102.34413574218749
+    },
+    {
+      "method": "naive",
+      "workers": 8,
+      "msg_bytes": 16384,
+      "latency_us": 87.108,
+      "pred_us": 477.60596679687495
+    },
+    {
+      "method": "ring",
+      "workers": 8,
+      "msg_bytes": 65536,
+      "latency_us": 194.417,
+      "pred_us": 349.9454833984375
+    },
+    {
+      "method": "tree",
+      "workers": 8,
+      "msg_bytes": 65536,
+      "latency_us": 232.507,
+      "pred_us": 532.9580859375
+    },
+    {
+      "method": "rd",
+      "workers": 8,
+      "msg_bytes": 65536,
+      "latency_us": 196.935,
+      "pred_us": 266.47904296875
+    },
+    {
+      "method": "naive",
+      "workers": 8,
+      "msg_bytes": 65536,
+      "latency_us": 425.787,
+      "pred_us": 1243.5688671875
+    },
+    {
+      "method": "ring",
+      "workers": 8,
+      "msg_bytes": 217256,
+      "latency_us": 248.393,
+      "pred_us": 645.4876059144735
+    },
+    {
+      "method": "tree",
+      "workers": 8,
+      "msg_bytes": 217256,
+      "latency_us": 531.987,
+      "pred_us": 1546.2453631353378
+    },
+    {
+      "method": "rd",
+      "workers": 8,
+      "msg_bytes": 217256,
+      "latency_us": 672.285,
+      "pred_us": 773.1226815676689
+    },
+    {
+      "method": "naive",
+      "workers": 8,
+      "msg_bytes": 217256,
+      "latency_us": 807.225,
+      "pred_us": 3607.9058473157884
+    },
+    {
+      "method": "ring",
+      "workers": 8,
+      "msg_bytes": 1048576,
+      "latency_us": 2851.66,
+      "pred_us": 2264.8527343749997
+    },
+    {
+      "method": "tree",
+      "workers": 8,
+      "msg_bytes": 1048576,
+      "latency_us": 5801.653,
+      "pred_us": 7098.354375
+    },
+    {
+      "method": "rd",
+      "workers": 8,
+      "msg_bytes": 1048576,
+      "latency_us": 11416.867,
+      "pred_us": 3549.1771875
+    },
+    {
+      "method": "naive",
+      "workers": 8,
+      "msg_bytes": 1048576,
+      "latency_us": 7023.713,
+      "pred_us": 16562.826875
+    },
+    {
+      "method": "ring",
+      "workers": 8,
+      "msg_bytes": 4194304,
+      "latency_us": 16448.22,
+      "pred_us": 8392.5559375
+    },
+    {
+      "method": "tree",
+      "workers": 8,
+      "msg_bytes": 4194304,
+      "latency_us": 25078.18,
+      "pred_us": 28107.622499999998
+    },
+    {
+      "method": "rd",
+      "workers": 8,
+      "msg_bytes": 4194304,
+      "latency_us": 48268.32,
+      "pred_us": 14053.811249999999
+    },
+    {
+      "method": "naive",
+      "workers": 8,
+      "msg_bytes": 4194304,
+      "latency_us": 28589.32,
+      "pred_us": 65584.45249999998
+    },
+    {
+      "method": "ring",
+      "workers": 8,
+      "msg_bytes": 16777216,
+      "latency_us": 91117.12,
+      "pred_us": 32903.36875
+    },
+    {
+      "method": "tree",
+      "workers": 8,
+      "msg_bytes": 16777216,
+      "latency_us": 111532.58,
+      "pred_us": 112144.69499999998
+    },
+    {
+      "method": "rd",
+      "workers": 8,
+      "msg_bytes": 16777216,
+      "latency_us": 188505.16,
+      "pred_us": 56072.34749999999
+    },
+    {
+      "method": "naive",
+      "workers": 8,
+      "msg_bytes": 16777216,
+      "latency_us": 117002.16,
+      "pred_us": 261670.95499999996
+    }
+  ],
+  "batch_sweep": [
+    {
+      "batch": 16,
+      "cpu_time_s": 3.8875,
+      "dist_p4": {
+        "ring": {
+          "total_s": 1.6123,
+          "comm_s": 0.247,
+          "comm_share_pct": 15.319729578862493,
+          "speedup": 2.411151770762265
+        },
+        "tree": {
+          "total_s": 2.0002,
+          "comm_s": 0.5817,
+          "comm_share_pct": 29.082091790820918,
+          "speedup": 1.9435556444355566
+        },
+        "rd": {
+          "total_s": 1.902,
+          "comm_s": 0.4679,
+          "comm_share_pct": 24.60042060988433,
+          "speedup": 2.0439011566771823
+        },
+        "naive": {
+          "total_s": 2.0007,
+          "comm_s": 0.5817,
+          "comm_share_pct": 29.074823811665915,
+          "speedup": 1.9430699255260657
+        }
+      }
+    },
+    {
+      "batch": 32,
+      "cpu_time_s": 4.2139,
+      "dist_p4": {
+        "ring": {
+          "total_s": 1.6226,
+          "comm_s": 0.2074,
+          "comm_share_pct": 12.781954887218044,
+          "speedup": 2.5970048070997165
+        },
+        "tree": {
+          "total_s": 1.4405,
+          "comm_s": 0.2045,
+          "comm_share_pct": 14.196459562651858,
+          "speedup": 2.9253037139881988
+        },
+        "rd": {
+          "total_s": 1.4883,
+          "comm_s": 0.2327,
+          "comm_share_pct": 15.635288584290802,
+          "speedup": 2.8313512060740442
+        },
+        "naive": {
+          "total_s": 1.6953,
+          "comm_s": 0.3209,
+          "comm_share_pct": 18.9288031616823,
+          "speedup": 2.4856367604553764
+        }
+      }
+    },
+    {
+      "batch": 64,
+      "cpu_time_s": 3.6578,
+      "dist_p4": {
+        "ring": {
+          "total_s": 1.4268,
+          "comm_s": 0.1277,
+          "comm_share_pct": 8.950098121670873,
+          "speedup": 2.563638912251191
+        },
+        "tree": {
+          "total_s": 1.5006,
+          "comm_s": 0.2171,
+          "comm_share_pct": 14.467546314807409,
+          "speedup": 2.43755831000933
+        },
+        "rd": {
+          "total_s": 1.5059,
+          "comm_s": 0.1916,
+          "comm_share_pct": 12.723288398964074,
+          "speedup": 2.4289793478982666
+        },
+        "naive": {
+          "total_s": 1.6332,
+          "comm_s": 0.2143,
+          "comm_share_pct": 13.121479304433015,
+          "speedup": 2.23965221650747
+        }
+      }
+    },
+    {
+      "batch": 128,
+      "cpu_time_s": 3.763,
+      "dist_p4": {
+        "ring": {
+          "total_s": 1.5509,
+          "comm_s": 0.1676,
+          "comm_share_pct": 10.806628409310724,
+          "speedup": 2.426333096911471
+        },
+        "tree": {
+          "total_s": 1.5858,
+          "comm_s": 0.1507,
+          "comm_share_pct": 9.503089923067222,
+          "speedup": 2.372934796317316
+        },
+        "rd": {
+          "total_s": 1.4702,
+          "comm_s": 0.1622,
+          "comm_share_pct": 11.032512583322,
+          "speedup": 2.559515712148007
+        },
+        "naive": {
+          "total_s": 1.4588,
+          "comm_s": 0.1557,
+          "comm_share_pct": 10.67315601864546,
+          "speedup": 2.579517411571154
+        }
+      }
+    },
+    {
+      "batch": 256,
+      "cpu_time_s": 3.7371,
+      "dist_p4": {
+        "ring": {
+          "total_s": 1.5272,
+          "comm_s": 0.1404,
+          "comm_share_pct": 9.193294918805657,
+          "speedup": 2.447027239392352
+        },
+        "tree": {
+          "total_s": 1.5183,
+          "comm_s": 0.1325,
+          "comm_share_pct": 8.726865573338603,
+          "speedup": 2.4613712704999013
+        },
+        "rd": {
+          "total_s": 1.5098,
+          "comm_s": 0.1453,
+          "comm_share_pct": 9.623791230626574,
+          "speedup": 2.4752285070870315
+        },
+        "naive": {
+          "total_s": 1.4968,
+          "comm_s": 0.1583,
+          "comm_share_pct": 10.575895243185464,
+          "speedup": 2.4967263495456975
+        }
+      }
+    }
+  ]
+}
