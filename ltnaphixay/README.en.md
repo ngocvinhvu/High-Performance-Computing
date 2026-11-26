@@ -176,9 +176,10 @@ Bus bandwidth at 64 MB: host_ref 1.40, tree 4.47, ring 4.69, rd 4.48 GB/s.
   1–2 MB. The model's 1.63 MB gradient is in this range.
 - **Large messages are bandwidth-bound and favour ring**, but only by 4–5 %. The CPU path is
   3.3× slower than the GPU methods here (1.4 vs 4.5–4.7 GB/s).
-- **All GPU methods reach about half the link rate.** Tree has to send the data one way and back,
-  so half is its limit. Ring and rd could use both directions at once but do not get further, which
-  suggests the two directions do not overlap and ring would need chunk pipelining.
+- **All three GPU methods level off at the same 4.5–4.7 GB/s**, so the limit is the link (PCIe
+  through the host bridge), not the algorithm. Ring and rd could use both directions at once but do
+  not get past tree, which suggests the two directions do not overlap and ring would need chunk
+  pipelining.
 - **Reproducible.** These numbers match the earlier 2-epoch run on another Kaggle machine within
   0.3 % for messages of 4 MB and up, and within 9 % for small messages.
 - With k = 2, the three GPU algorithms move the same amount of data. Their textbook differences

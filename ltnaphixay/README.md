@@ -175,10 +175,9 @@ Băng thông bus ở 64 MB: host_ref 1,40, tree 4,47, ring 4,69, rd 4,48 GB/s.
   ở 1–2 MB. Gradient 1,63 MB của mô hình nằm trong khoảng này.
 - **Thông điệp lớn bị giới hạn bởi băng thông và ring nhanh nhất**, nhưng chỉ hơn 4–5 %. Đường qua
   CPU chậm hơn các phương pháp GPU 3,3 lần ở đây (1,4 so với 4,5–4,7 GB/s).
-- **Các phương pháp GPU chỉ đạt khoảng một nửa tốc độ đường truyền.** Tree phải gửi dữ liệu đi một
-  chiều rồi gửi về, nên một nửa là giới hạn của nó. Ring và rd về lý thuyết có thể dùng cả hai chiều
-  cùng lúc nhưng không vượt được mức đó, cho thấy hai chiều không chạy chồng lên nhau và ring cần
-  pipeline theo khối.
+- **Cả ba phương pháp GPU dừng ở cùng mức 4,5–4,7 GB/s**, nên giới hạn nằm ở đường truyền (PCIe qua
+  host bridge) chứ không ở thuật toán. Ring và rd về lý thuyết có thể dùng cả hai chiều cùng lúc nhưng
+  không vượt được tree, cho thấy hai chiều không chạy chồng lên nhau và ring cần pipeline theo khối.
 - **Lặp lại được.** Số liệu khớp với lần chạy 2 epoch trước đó trên một máy Kaggle khác, sai khác
   dưới 0,3 % với thông điệp từ 4 MB trở lên và dưới 9 % với thông điệp nhỏ.
 - Với k = 2, ba thuật toán GPU truyền cùng một lượng dữ liệu. Khác biệt lý thuyết giữa chúng chỉ thể
