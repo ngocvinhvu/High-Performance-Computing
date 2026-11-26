@@ -36,7 +36,7 @@ typedef void (*allreduce_fn)(float **grads, size_t n, int k, cudaStream_t *strea
 
 /* ---- Methods ------------------------------------------------------------- */
 void allreduce_host_ref(float **grads, size_t n, int k, cudaStream_t *streams); /* reference: via host */
-void allreduce_tree    (float **grads, size_t n, int k, cudaStream_t *streams); /* paper's method */
+void allreduce_tree    (float **grads, size_t n, int k, cudaStream_t *streams); /* flat reduce to GPU 0 + broadcast */
 void allreduce_ring    (float **grads, size_t n, int k, cudaStream_t *streams); /* ring */
 void allreduce_rd      (float **grads, size_t n, int k, cudaStream_t *streams); /* recursive doubling */
 /* Overlap is the training loop's --overlap mode, see src/cuda/train_dp.cu */

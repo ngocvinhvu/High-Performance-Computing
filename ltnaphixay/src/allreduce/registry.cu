@@ -7,7 +7,7 @@ typedef struct { const char *name; allreduce_fn fn; const char *desc; } Entry;
 
 static const Entry TABLE[] = {
     { "host_ref", allreduce_host_ref, "reference: copy to host, sum on CPU, copy back (correct, slow)" },
-    { "tree",     allreduce_tree,     "paper's method: reduce to GPU 0, then broadcast" },
+    { "tree",     allreduce_tree,     "flat: reduce to GPU 0 (driver), then broadcast" },
     { "ring",     allreduce_ring,     "ring: reduce-scatter + allgather" },
     { "rd",       allreduce_rd,       "recursive doubling / halving" },
 };

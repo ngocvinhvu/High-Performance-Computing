@@ -61,7 +61,7 @@ Các phương pháp (mỗi phương pháp một file trong `src/allreduce/`):
 | Phương pháp | Cách hoạt động |
 |---|---|
 | `host_ref` | Chép mọi gradient về CPU, lấy trung bình, chép ngược lên GPU. Dùng làm chuẩn để kiểm tra tính đúng |
-| `tree` | Phương pháp của bài báo: gom (reduce) về GPU 0, lấy trung bình, phát (broadcast) lại |
+| `tree` | Gom (reduce) về GPU 0 (máy driver như §5 của bài), lấy trung bình, phát (broadcast) lại. Cây phẳng: GPU 0 trao đổi lần lượt với từng GPU, chi phí 2(k−1)·(α + nβ), bằng tổng chi phí thông điệp O(L·k) + O(k·p/B) của bài; bài dùng BitTorrent aggregate (cây nhị thức, log₂k vòng song song) |
 | `ring` | Reduce-scatter rồi allgather (chưa chia nhỏ khối để pipeline) |
 | `rd` | Recursive doubling; GPU dư được gộp vào khi k không phải lũy thừa của 2 |
 | `--overlap` | Bắt đầu allreduce gradient lớp 2 trong khi lan truyền ngược của lớp 1 vẫn đang chạy |
@@ -263,7 +263,7 @@ Kết quả cho thấy:
   O(L·k) + O(k·p/B). Gradient 1,63 MB nằm trong vùng bị chi phối bởi độ trễ, nên khi huấn luyện ở
   batch 256, rd và tree nhanh hơn ring kể cả qua NVLink.
 - **Tree mất băng thông khi k tăng** (93 → 51 GB/s qua NVLink), vì GPU 0 phải nhận và gửi mọi thông
-  điệp, đúng như phân tích reduce-về-một-GPU-rồi-broadcast của bài báo.
+  điệp, đúng như dự đoán của cây phẳng: chi phí 2(k−1)(α + nβ) tăng tuyến tính theo k.
 - **Ở batch 256, thêm GPU chỉ làm huấn luyện chậm đi, kể cả với NVLink.** Một A100 chỉ cần 0,36 ms
   mỗi bước, chưa bằng một nửa 0,85 ms của T4, nên chi phí allreduce cố định chiếm tỉ lệ còn lớn hơn
   (truyền thông không được che 29–37 % ở k=2 và 50–69 % ở k=4 qua NVLink, 83–89 % ở k=4 qua host).

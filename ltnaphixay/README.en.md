@@ -61,7 +61,7 @@ Methods (one file each in `src/allreduce/`):
 | Method | How it works |
 |---|---|
 | `host_ref` | Copy every gradient to the CPU, average, copy back. Reference for correctness |
-| `tree` | The paper's method: reduce to GPU 0, average, broadcast |
+| `tree` | Reduce to GPU 0 (the driver, as in §5 of the paper), average, broadcast. Flat tree: GPU 0 talks to each GPU in turn, cost 2(k−1)(α + nβ), which equals the paper's summed message cost O(L·k) + O(k·p/B); the paper uses a BitTorrent aggregate (binomial tree, log₂k parallel rounds) |
 | `ring` | Reduce-scatter, then allgather (no chunk pipelining) |
 | `rd` | Recursive doubling; extra GPUs are folded in when k is not a power of two |
 | `--overlap` | Start the allreduce of layer 2 while layer 1's backward is still running |
@@ -263,7 +263,7 @@ What this shows:
   O(L·k) term of O(L·k) + O(k·p/B). The 1.63 MB gradient sits in this latency-bound region, which is
   why rd and tree beat ring in training at batch 256 even over NVLink.
 - **Tree loses bandwidth as k grows** (93 → 51 GB/s over NVLink), because GPU 0 receives and sends
-  every message, as the paper's reduce-to-one-then-broadcast analysis predicts.
+  every message, as the flat tree's cost 2(k−1)(α + nβ) predicts: it grows linearly with k.
 - **At batch 256 more GPUs only slow training down, even with NVLink.** One A100 needs just 0.36 ms
   per step, less than half a T4's 0.85 ms, so the fixed allreduce cost is an even larger share
   (exposed communication 29–37 % at k=2 and 50–69 % at k=4 over NVLink, 83–89 % at k=4 via host).

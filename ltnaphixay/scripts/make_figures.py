@@ -18,7 +18,7 @@ os.makedirs(OUT, exist_ok=True)
 SURFACE, INK, INK2, GRID, NEUTRAL = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e3df", "#8a8984"
 COLOR = {"tree": "#2a78d6", "ring": "#eb6834", "rd": "#1baf7a", "host_ref": "#eda100"}
 MARK = {"tree": "o", "ring": "s", "rd": "^", "host_ref": "D"}
-LABEL = {"tree": "tree (paper)", "ring": "ring", "rd": "recursive doubling", "host_ref": "host_ref (via CPU)"}
+LABEL = {"tree": "tree (flat)", "ring": "ring", "rd": "recursive doubling", "host_ref": "host_ref (via CPU)"}
 
 plt.rcParams.update({
     "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
