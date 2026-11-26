@@ -120,7 +120,8 @@ Gửi một thông điệp `n` byte tốn `α + nβ` (α độ trễ, β = 1/bă
 
 | Thuật toán | Thời gian | Ghi chú |
 |---|---|---|
-| Gom về một máy rồi phát lại (tree, "BitTorrent aggregate" của bài) | `2·log₂k · (α + nβ)` | Bài tính chi phí tổng là `O(L·k) + O(k·p/B)` |
+| Cây nhị thức (tree của C, D; "BitTorrent aggregate" của bài) | `2·log₂k · (α + nβ)` | log₂k vòng song song; bài cộng mọi thông điệp thành `O(L·k) + O(k·p/B)` |
+| Cây phẳng về GPU 0 (tree của E) | `2(k−1) · (α + nβ)` | GPU 0 nhận và gửi lần lượt; bằng tổng chi phí `O(L·k) + O(k·p/B)` của bài |
 | Driver trung tâm (naive, kiểu parameter server) | `2(k−1) · (α + nβ)` | Driver là nút thắt |
 | Recursive doubling | `log₂k · (α + nβ)` | Ít bước, gửi cả vector mỗi bước |
 | Ring (reduce-scatter + allgather) | `2(k−1)·α + 2·(k−1)/k · nβ` | Nhiều bước, nhưng băng thông gần tối ưu |
