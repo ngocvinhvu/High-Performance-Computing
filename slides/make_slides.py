@@ -940,23 +940,26 @@ def build(template, out):
     # 15. Truyền thông đa GPU
     s = content_slide(prs, "§5: truyền thông quyết định có nên thêm GPU",
                       "Cấu hình E. MLP nhỏ, gradient 1,63 MB. Ở batch 256, 2 GPU chậm hơn 1 GPU vì một nửa mỗi bước là truyền thông; "
-                      "từ batch 1024 trở lên mới có lợi, tới 1,60×. Trên 4× A100, tree mất băng thông khi k tăng đúng như phân tích "
-                      "gom-rồi-phát của bài; ring giữ 157 GB/s. Qua host chỉ khoảng 5 GB/s.")
+                      "từ batch 1024 trở lên mới có lợi, tới 1,60×. Thông điệp nhỏ: qua host nhanh nhất, vừa: rd, lớn: ring.")
     picture(s, "ltnaphixay/docs/figures/fig1_speedup_vs_batch.png", 0.4, 1.0, w=5.3, name="Hình batch")
-    caption(s, 0.4, 4.22, 5.3, "2× T4 so với 1 T4, ba allreduce tự viết (cấu hình E). Nhãn hình bằng tiếng Anh.")
+    caption(s, 0.4, 4.22, 5.3, "2× T4 so với 1 T4, ba allreduce tự viết (cấu hình E).")
     stat(s, 5.95, 1.0, 1.75, "0,88×", "batch 256: ≈ 50% mỗi bước là truyền thông", big_size=28, h=1.6)
-    stat(s, 7.85, 1.0, 1.75, "1,60×", "batch 4096: truyền thông còn 5–7%", big_size=28, h=1.6)
+    stat(s, 7.85, 1.0, 1.75, "1,60×", "batch 4096: truyền thông 7% (ring, rd), 22% (tree)", big_size=28, h=1.6)
     text(s, 5.95, 2.78, 3.65, 1.5, [
         P(R("T_ar ≈ 0,4 ms không đổi theo batch; tính toán tăng theo batch", size=14), bullet=True, after=4),
         P(R("Nhỏ: qua host; vừa: rd; lớn: ring", size=14), bullet=True),
     ])
-    text(s, 0.4, 4.65, 9.2, 0.4, [P(R("Allreduce 256 MB trên 4× A100, băng thông bus", size=15, bold=True, color=DARKRED, font=TITLE_FONT))])
-    table(s, 0.4, 5.08, 9.2, [
-        ["", "tree (bài báo)", "ring", "recursive doubling"],
-        ["k = 2, NVLink", "93 GB/s", "154 GB/s", "124 GB/s"],
-        ["k = 4, NVLink", "51 GB/s", "157 GB/s", "101 GB/s"],
-        ["k = 4, qua host", "4,0 GB/s", "5,8 GB/s", "4,0 GB/s"],
-    ], col_w=[2.3, 2.3, 2.3, 2.3], font=13, header_font=13, row_h=0.36, bold_first_col=True, name="Bảng NVLink")
+
+    # 15b. NVLink so với qua host (cấu hình E, 4× A100)
+    s = content_slide(prs, "§5: NVLink so với qua host trên 4× A100",
+                      "Cấu hình E trên 4× A100 SXM. Với thông điệp lớn, NVLink nhanh hơn đi qua bộ nhớ host 12–27 lần; ring giữ 157 GB/s "
+                      "ở k = 4, còn tree phẳng giảm từ 93 xuống 51 GB/s vì GPU 0 nhận và gửi mọi thông điệp. Ở batch 4096, 4 GPU đạt "
+                      "1,59× với NVLink nhưng chỉ 1,23–1,33× khi qua host: đường truyền nhanh mới làm thêm GPU có lợi.")
+    picture(s, "ltnaphixay/docs/figures/fig6_a100_nvlink_vs_host.png", 0.4, 1.0, w=9.2, name="Hình NVLink")
+    caption(s, 0.4, 5.12, 9.2, "4× A100 SXM: băng thông allreduce, NVLink so với qua host (cấu hình E).")
+    stat(s, 0.4, 5.5, 2.95, "1,59×", "4× A100, batch 4096, NVLink", big_size=30, h=1.2)
+    stat(s, 3.52, 5.5, 2.95, "1,23–1,33×", "cùng cấu hình, qua host", big_size=30, h=1.2)
+    stat(s, 6.64, 5.5, 2.95, "12–27×", "NVLink nhanh hơn qua host, thông điệp lớn", big_size=30, h=1.2)
 
     # 16. §2
     s = content_slide(prs, "§2: chia mô hình chỉ để vừa bộ nhớ; muốn nhanh phải chia sâu hơn",
