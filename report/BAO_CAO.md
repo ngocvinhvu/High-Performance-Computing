@@ -20,7 +20,8 @@
 Bài của Hegde và Usmani nêu ba nhóm nhận định: (i) GPU nhanh hơn CPU khoảng 40 lần ở lớp conv và lớp kết nối đầy đủ, và tỉ lệ này tăng
 theo batch và theo kích thước ma trận (§3, đo bằng Caffe); (ii) chi phí truyền thông và độ chính xác của các phương pháp cập nhật
 trọng số phân tán Parallel SGD, ADMM và Downpour SGD (§5, chỉ phân tích lý thuyết); (iii) chia mô hình (model parallelism) chỉ nên
-dùng khi mô hình không vừa một máy (§2, không đo). Nhóm 10 cài đặt lại từ đầu bằng C, MPI và CUDA, không dùng cuBLAS, cuDNN, NCCL hay
+dùng khi mô hình không vừa một máy (§2, không đo). Ba mục còn lại của bài (§1 giới thiệu, §4 kiến thức nền về SGD, §6 kết luận)
+không đưa ra nhận định mới để kiểm chứng (mục 1.1). Nhóm 10 cài đặt lại từ đầu bằng C, MPI và CUDA, không dùng cuBLAS, cuDNN, NCCL hay
 framework học sâu, rồi đo trên năm cấu hình phần cứng, từ laptop tới 4× H100.
 
 Kết quả chính của nhóm:
@@ -43,6 +44,31 @@ Kết quả chính của nhóm:
 ---
 
 ## 1. Bài toán
+
+### 1.1 Tổng quan bài báo gốc và phạm vi kiểm chứng
+
+Bài của Hegde và Usmani dài 8 trang, gồm sáu mục. Không phải mục nào cũng đưa ra nhận định có thể kiểm chứng bằng số đo: có mục
+giới thiệu, có mục trình bày kiến thức nền, có mục kết luận. Bảng dưới phân loại từng mục để chỉ ra vì sao phần kết quả của báo cáo
+này chỉ đối chiếu với §2, §3 và §5.
+
+| Mục của bài | Nội dung | Loại nội dung | Nhận định đo được | Trong báo cáo này |
+|---|---|---|---|---|
+| §1 Introduction (1.1 Deep Learning, 1.2 Need for Parallel and Distributed Algorithms) | Giới thiệu mạng nơ-ron; lý do cần song song: mạng có hàng triệu tham số, huấn luyện trên một nhân mất nhiều ngày | Giới thiệu, động lực | Một ước lượng không chứng minh ở §1.2: máy *q* nhân mất khoảng 1/*q* thời gian | Không phải trọng tâm; đối chiếu nhanh bằng số đo strong scaling ở mục 5.2 và mục 6 |
+| §2 Parallel and Distributed Methods | Liệt kê cách song song: đa nhân (mỗi nhân xử lý một ảnh, hoặc mỗi nhân một mini-batch), GPU cho phép nhân ma trận, song song dữ liệu, song song mô hình | Mô tả phương pháp, không có số đo | Một nhận định: chỉ dùng song song mô hình khi mô hình không vừa một máy, không phải để tăng tốc | **Mục 5.4** (cấu hình A) |
+| §3 Empirical analysis: CPU versus GPU time | im2col + GEMM của Caffe; đo forward của lớp conv theo batch và lớp FC theo n trên Xeon E5-2670 và GRID K520 (Hình 1–4) | **Thực nghiệm** | Conv tuyến tính theo batch; FC O(n²); GPU nhanh hơn CPU khoảng 40×; speedup tăng theo batch và theo n | **Mục 5.1** (cấu hình B, D) |
+| §4 Stochastic Gradient Descent | Hàm mất mát softmax (công thức 2), luật cập nhật SGD trên mini-batch (công thức 3–4) | Kiến thức nền | Không có | Dùng làm mô hình toán, **mục 2.1**; mọi cấu hình cài đúng hàm mất mát và luật cập nhật này |
+| §5 Data Parallelism (5.1 Synchronous: Parallel SGD, ShuffleSGD, ADMM.SGD; 5.2 Asynchronous: Downpour SGD) | Mã giả các thuật toán; phân tích O(·) thời gian tính, chi phí và thời gian truyền thông | **Phân tích lý thuyết**, không có số đo | Chi phí `O(L·k) + O(k·p/B)`; Parallel SGD cần trộn dữ liệu; ADMM tránh trộn dữ liệu; Downpour bị server giới hạn, không tăng tốc khi số worker vượt `T/τ` | **Mục 5.2 và 5.3** (cấu hình C, D, E) |
+| §6 Conclusion and Future Work | Tóm tắt; đề xuất làm song song mô hình và phân tích chi phí của nó | Kết luận | Không có nhận định mới | Hướng đề xuất được làm ở cấu hình A (mục 5.4) |
+
+Như vậy, các nhận định có thể kiểm chứng tập trung ở **§2, §3 và §5**:
+
+- **§3** là mục thực nghiệm duy nhất của bài. Nhóm đo lại đúng lớp conv và lớp FC đó bằng kernel tự viết.
+- **§5** chỉ có phân tích O(·), không có số đo nào. Nhóm cài các thuật toán và đo chi phí thật.
+- **§2** chỉ mô tả, nhưng có một nhận định rõ ràng về song song mô hình mà bài không đo. Nhóm kiểm chứng nhận định này.
+- **§1, §4 và §6** không đưa ra nhận định mới. Ước lượng "1/*q*" ở §1.2 là câu nêu động lực, không được phân tích. Số đo strong
+  scaling ở mục 5.2 vẫn cho phép đối chiếu nhanh với nó (mục 6).
+
+### 1.2 Bài toán của nhóm
 
 Huấn luyện một mạng nơ-ron là tìm tham số `w ∈ ℝ^p` cực tiểu hóa trung bình hàm mất mát trên `n` mẫu. Mạng sâu có hàng triệu tham số
 và cần nhiều dữ liệu, nên một lần huấn luyện trên một nhân CPU có thể mất nhiều ngày. Bài toán của đề tài là **chia việc huấn luyện ra
@@ -402,6 +428,7 @@ theo số micro-batch, đường chấm là trần bong bóng `S·M/(M+S−1)`. 
 
 | Nhận định của bài | Kết quả của nhóm | Đánh giá |
 |---|---|---|
+| §1.2 (động lực, không phân tích): máy *q* nhân mất khoảng 1/*q* thời gian | Sync SGD trên một máy 6 nhân hiệu năng cao: 3,12× ở k = 6, bão hòa 3,45× ở k = 10 | **Không đúng** trên một máy |
 | §2: model parallelism chỉ dùng khi mô hình không vừa một máy | M = 1 cho 1,00×; mô hình 103 GB chỉ chạy được trên ≥ 2 GPU | **Xác nhận** |
 | §3: thời gian conv tuyến tính theo batch, O(n) | R² ≥ 0,999 trên CPU và GPU (T4 + Xeon); R² ≥ 0,998 trên i5-8257U, i5-12600K, RTX 2060 | **Xác nhận** |
 | §3: GPU nhanh hơn CPU khoảng 40× | 23× (T4, kernel tự viết), 40–56× (RTX 4060, lớp nhỏ hơn), < 1× với ma trận nhỏ | **Đúng bậc độ lớn, không phải hằng số** |

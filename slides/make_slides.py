@@ -353,8 +353,8 @@ def build(template, out):
     s = content_slide(prs, "Mục lục", "Bốn phần: bài toán và mô hình toán, thiết kế song song, kết quả theo từng mục "
                                      "của bài báo, đối chiếu và kết luận. Khoảng 15 phút.")
     items = [
-        ("I", "Bài toán và mô hình toán", "Ba nhận định của bài báo · năm cấu hình thí nghiệm · SGD, im2col, mô hình α–β"),
-        ("II", "Thiết kế, mã nguồn và phương pháp đo", "Bốn lớp song song · trích đoạn code chính · kiểm tra tính đúng · cách bấm giờ và chỉ số"),
+        ("I", "Bài toán và mô hình toán", "Tổng quan bài báo gốc · năm cấu hình thí nghiệm · SGD, im2col, mô hình α–β"),
+        ("II", "Thiết kế, mã nguồn và phương pháp đo", "Bốn lớp song song · code chính · kiểm tra tính đúng · cách bấm giờ và chỉ số"),
         ("III", "Kết quả", "§3 CPU so với GPU · §5 song song dữ liệu và truyền thông · §2 song song mô hình"),
         ("IV", "Đối chiếu và kết luận", "Nhận định nào đúng, nhận định nào chỉ đúng một phần"),
     ]
@@ -367,6 +367,29 @@ def build(template, out):
 
     # 4. Section I
     section_slide(prs, "I.", "BÀI TOÁN VÀ MÔ HÌNH TOÁN")
+
+    # 4b. Tổng quan bài báo gốc
+    s = content_slide(prs, "Bài báo gốc: 6 mục, chỉ §2, §3, §5 có nhận định đo được",
+                      "Bài báo dài 8 trang, 6 mục. §3 là mục thực nghiệm duy nhất. §5 chỉ phân tích O(.), không có số đo. §2 chỉ mô tả, "
+                      "nhưng có một nhận định rõ về song song mô hình. §1 là giới thiệu và động lực, §4 là kiến thức nền về SGD (nhóm dùng "
+                      "làm mô hình toán), §6 là kết luận. Vì vậy phần kết quả chỉ đối chiếu với §2, §3 và §5. Ước lượng 1/q ở §1.2 chỉ là "
+                      "câu động lực, nhưng vẫn đối chiếu nhanh được bằng số đo strong scaling.")
+    ok_, no_ = {"color": GREEN, "bold": True}, {"color": MUTED, "bold": True}
+    table(s, 0.4, 1.05, 9.2, [
+        ["Mục", "Nội dung", "Loại", "Đo được?"],
+        ["§1 Introduction", "Mạng nơ-ron là gì; vì sao cần song song (máy q nhân ≈ 1/q thời gian)", "Giới thiệu", [("Không*", no_)]],
+        ["§2 Parallel and Distributed Methods", "Liệt kê: đa nhân, GPU, song song dữ liệu, song song mô hình", "Mô tả", [("Có: song song mô hình", ok_)]],
+        ["§3 CPU versus GPU time", "Đo conv theo batch, FC theo n trên Xeon và K520 (Caffe)", "Thực nghiệm", [("Có", ok_)]],
+        ["§4 Stochastic Gradient Descent", "Hàm mất mát softmax, luật cập nhật SGD", "Kiến thức nền", [("Không", no_)]],
+        ["§5 Data Parallelism", "Parallel SGD, ShuffleSGD, ADMM, Downpour; chi phí O(·)", "Phân tích lý thuyết", [("Có", ok_)]],
+        ["§6 Conclusion and Future Work", "Tóm tắt; đề xuất song song mô hình", "Kết luận", [("Không", no_)]],
+    ], col_w=[2.45, 4.0, 1.35, 1.4], font=12, header_font=13, row_h=0.52, bold_first_col=True, name="Bảng mục bài báo")
+    callout(s, 0.4, 4.95, 2.95, 1.75, "§3: đo lại",
+            "Mục thực nghiệm duy nhất của bài; nhóm đo lại đúng lớp conv và FC bằng kernel tự viết", size=12)
+    callout(s, 3.52, 4.95, 2.95, 1.75, "§5, §2: đo lần đầu",
+            "Bài chỉ phân tích O(·) hoặc mô tả; nhóm cài thuật toán và đo chi phí thật", size=12)
+    callout(s, 6.64, 4.95, 2.95, 1.75, "§1, §4, §6: không đo",
+            "Giới thiệu, nền tảng, kết luận. *Ước lượng 1/q ở §1.2 vẫn đối chiếu được ở slide đối chiếu", size=12)
 
     # 5. Bài toán
     s = content_slide(prs, "Bài toán: chia việc huấn luyện ra nhiều đơn vị tính",
@@ -886,6 +909,7 @@ def build(template, out):
     ok, part, no = ("Xác nhận", {"color": GREEN, "bold": True}), ("Một phần", {"color": AMBER, "bold": True}), ("Không đúng", {"color": DARKRED, "bold": True})
     table(s, 0.4, 1.05, 9.2, [
         ["Nhận định của bài", "Kết quả của nhóm", "Đánh giá"],
+        ["§1.2 q nhân ≈ 1/q thời gian (động lực)", "6–10 tiến trình trên một máy: 3,1–3,5×", [no]],
         ["§2 Model parallelism chỉ để vừa bộ nhớ", "M = 1 cho 1,00×; 103 GB chỉ chạy trên ≥ 2 GPU", [ok]],
         ["§3 Conv tuyến tính theo batch", "R² ≥ 0,999 trên CPU và GPU", [ok]],
         ["§3 GPU nhanh hơn ≈ 40×", "23× đến 56×, < 1× với ma trận nhỏ", [part]],
@@ -894,8 +918,8 @@ def build(template, out):
         ["§5.1.1 Parallel SGD cần trộn dữ liệu", "77,7% → 97,9% nhờ ShuffleSGD", [ok]],
         ["§5.1.2 ADMM tránh trộn dữ liệu", "Tốt hơn PSGD mỗi epoch, kém ShuffleSGD", [part]],
         ["§5.2 Bất đồng bộ nhanh hơn", "Chậm hơn 1,46–3,31× khi so ở cùng độ chính xác", [no]],
-    ], col_w=[3.35, 4.35, 1.5], font=13, header_font=13, row_h=0.5, name="Bảng đối chiếu")
-    caption(s, 0.4, 5.75, 9.2, "Chưa kiểm chứng: Downpour không còn tăng tốc khi số worker vượt T/τ.", size=13)
+    ], col_w=[3.35, 4.35, 1.5], font=13, header_font=13, row_h=0.47, name="Bảng đối chiếu")
+    caption(s, 0.4, 6.05, 9.2, "Chưa kiểm chứng: Downpour không còn tăng tốc khi số worker vượt T/τ.", size=13)
 
     # 18. Kết luận
     s = content_slide(prs, "Kết luận và hướng tiếp theo",
