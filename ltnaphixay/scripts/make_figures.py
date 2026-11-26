@@ -94,9 +94,7 @@ for fig_name, idx, ylab, title, logy in (
         ax.axvline(1628200, color=NEUTRAL, lw=1.2, ls="--")
         ax.text(1628200 * 1.1, 0.02, "model gradient\n1.63 MB", color=INK2, fontsize=8, va="bottom")
     else:
-        ax.axhline(9.885, color=NEUTRAL, lw=1.2, ls="--")
-        ax.text(67108864, 9.885 - 0.15, "one-way peer copy, 9.9 GB/s", color=INK2, fontsize=8, va="top", ha="right")
-        ax.set_ylim(0, 10.5)
+        ax.set_ylim(0, 5.5)
     ticks = [4096, 65536, 1048576, 16777216, 67108864]
     ax.set_xticks(ticks, [size_label(t) for t in ticks])
     ax.set_xlabel("Message size")

@@ -166,8 +166,7 @@ Thời gian trung vị mỗi lần allreduce, k = 2, ms ([`allreduce.csv`](runs/
 | 16 MB | 11,970 | 3,787 | **3,608** | 3,747 |
 | 64 MB | 47,980 | 15,001 | **14,298** | 14,979 |
 
-Băng thông bus ở 64 MB: host_ref 1,40, tree 4,47, ring 4,69, rd 4,48 GB/s. Một lần chép P2P một
-chiều đạt 9,9 GB/s (`runs/kaggle-2026-11-22/`).
+Băng thông bus ở 64 MB: host_ref 1,40, tree 4,47, ring 4,69, rd 4,48 GB/s.
 
 - **Thông điệp nhỏ bị giới hạn bởi độ trễ.** Với 4–8 KB, hai lần chép nhỏ qua CPU nhanh hơn một chút
   so với mọi phương pháp trên GPU. Ring có mức sàn khoảng 0,053 ms vì phải chạy nhiều bước phụ thuộc

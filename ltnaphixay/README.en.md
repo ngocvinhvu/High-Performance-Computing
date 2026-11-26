@@ -167,8 +167,7 @@ Median time per allreduce, k = 2, ms ([`allreduce.csv`](runs/kaggle-final-2026-1
 | 16 MB | 11.970 | 3.787 | **3.608** | 3.747 |
 | 64 MB | 47.980 | 15.001 | **14.298** | 14.979 |
 
-Bus bandwidth at 64 MB: host_ref 1.40, tree 4.47, ring 4.69, rd 4.48 GB/s. A one-way peer copy
-reaches 9.9 GB/s (`runs/kaggle-2026-11-22/`).
+Bus bandwidth at 64 MB: host_ref 1.40, tree 4.47, ring 4.69, rd 4.48 GB/s.
 
 - **Small messages are latency-bound.** For 4–8 KB, two small copies through the CPU are slightly
   faster than any GPU method. Ring has a floor of about 0.053 ms because it runs more dependent
