@@ -442,41 +442,21 @@ def build(template, out):
     ], col_w=[0.4, 5.2, 3.6], font=13, header_font=13, row_h=0.42, bold_first_col=True, name="Bảng dữ liệu")
     caption(s, 0.4, 6.05, 9.2, "Bài báo gốc: ảnh xám 224×224 thuộc 40 lớp, không nêu tên bộ dữ liệu.", size=12)
 
-    # 6. Mô hình toán
-    s = content_slide(prs, "Mô hình toán",
-                      "Trái: vì sao Sync SGD phải cho đúng kết quả tuần tự, và vì sao conv tuyến tính theo batch còn FC "
-                      "bị giới hạn bởi băng thông. Phải: mô hình chi phí α–β. Điều kiện để thêm GPU có lợi và trần bong bóng "
-                      "của pipeline là hai công thức sẽ dùng để đọc kết quả.")
-    box(s, 0.4, 1.05, 4.45, 5.65)
-    text(s, 0.55, 1.15, 4.15, 5.5, [
-        P(R("SGD và tính tương đương", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
-        P(R("w ← w − α · (1/m) Σ ∇Lᵢ(w)", size=15, bold=True), after=4),
-        P(R("Chia batch cho k tiến trình: (1/k) Σ gᵣ = ∇L", size=14), bullet=True),
-        P(R("⇒ Sync SGD bằng đúng SGD tuần tự, chỉ khác thứ tự cộng số thực", size=14), bullet=True, after=10),
-        P(R("Conv quy về nhân ma trận", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
-        P(R("im2col: (96×121)·(121×2916) ≈ 67,7 MFLOP/ảnh", size=14), bullet=True),
-        P(R("t(B) = a + b·B: tuyến tính theo batch", size=14), bullet=True, after=10),
-        P(R("FC là nhân ma trận–vector", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
-        P(R("2n² FLOP nhưng đọc 4n² byte ⇒ t(n) ≈ 4n²/BW", size=14), bullet=True),
-        P(R("Tỉ lệ CPU/GPU ≈ tỉ lệ băng thông bộ nhớ", size=14), bullet=True),
-    ])
-    text(s, 5.1, 1.1, 4.5, 0.4, [P(R("Chi phí allreduce n byte trên k máy", size=16, bold=True, color=DARKRED, font=TITLE_FONT))])
-    table(s, 5.1, 1.55, 4.5, [
-        ["Thuật toán", "Thời gian"],
-        ["tree nhị thức (BitTorrent, bài báo)", "2·log₂k·(α + nβ)"],
-        ["gom phẳng về driver (tree phẳng)", "2(k−1)·(α + nβ)"],
-        ["recursive doubling", "log₂k·(α + nβ)"],
-        ["ring", "2(k−1)·α + 2(k−1)/k·nβ"],
-    ], col_w=[2.3, 2.2], font=12, header_font=13, row_h=0.38, name="Bảng alpha-beta")
-    text(s, 5.1, 3.75, 4.5, 2.95, [
-        P(R("Thông điệp nhỏ: ít bước thắng. Thông điệp lớn: ring thắng.", size=14), after=10),
-        P(R("Khi nào thêm GPU có lợi", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
-        P(R("T_c(B)·(1 − 1/k) > T_ar(p)", size=15, bold=True), after=2),
-        P(R("T_ar không đổi theo batch ⇒ mô hình nhỏ cần batch lớn", size=14), after=10),
-        P(R("Pipeline S stage, M micro-batch", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
-        P(R("Trần tăng tốc S·M / (M + S − 1)", size=15, bold=True), after=2),
-        P(R("M = 1 ⇒ trần bằng 1: chia mô hình thuần túy không nhanh hơn", size=14)),
-    ])
+    # 6. Mô hình toán (chỉ tên công thức và ứng dụng; công thức chi tiết ở mục 2 của báo cáo)
+    s = content_slide(prs, "Mô hình toán: sáu công thức dùng để đọc kết quả",
+                      "Không trình bày phương trình, chỉ nêu mỗi mô hình dùng để làm gì. Công thức đầy đủ nằm ở mục 2 của báo cáo. "
+                      "Mô hình đầu nói kết quả phải đúng thế nào, năm mô hình sau nói chương trình nhanh đến đâu và vì sao.")
+    table(s, 0.4, 1.05, 9.2, [
+        ["Công thức / mô hình", "Ứng dụng trong bài", "Dùng ở"],
+        ["Tương đương của Sync SGD", "Chia batch cho k máy rồi lấy trung bình gradient cho đúng kết quả SGD tuần tự: căn cứ để kiểm tra bản song song", "Kiểm tra đúng đắn"],
+        ["im2col + GEMM", "Đưa conv về nhân ma trận: giải thích vì sao GEMM là phần nặng nhất và conv tuyến tính theo batch", "§3, §3.1"],
+        ["Giới hạn băng thông bộ nhớ", "Lớp FC đọc nhiều hơn tính: tỉ lệ GPU/CPU phụ thuộc băng thông, ma trận nhỏ GPU có thể thua", "§3"],
+        ["Mô hình chi phí α–β (Hockney)", "So sánh các thuật toán allreduce (tree, tree phẳng, recursive doubling, ring) và chọn theo kích thước thông điệp", "§5, đa GPU"],
+        ["Điều kiện thêm GPU có lợi", "Phần tính tiết kiệm được phải lớn hơn thời gian allreduce: mô hình nhỏ cần batch lớn", "§5, đa GPU"],
+        ["Trần tăng tốc pipeline (bong bóng)", "Chia mô hình mà không chia micro-batch thì không nhanh hơn: chỉ để vừa bộ nhớ", "§2"],
+    ], col_w=[2.75, 5.0, 1.45], font=13, header_font=13, row_h=0.62, bold_first_col=True, name="Bảng mô hình toán")
+    caption(s, 0.4, 5.55, 9.2, "Dòng đầu: kết quả phải đúng thế nào. Năm dòng sau: nhanh đến đâu và vì sao. "
+            "Phương trình đầy đủ ở mục 2 của báo cáo.", size=13)
 
     # 7. Section II
     section_slide(prs, "II.", "THIẾT KẾ, MÃ NGUỒN VÀ PHƯƠNG PHÁP ĐO")
@@ -877,10 +857,12 @@ def build(template, out):
     stat(s, 6.05, 4.5, 3.55, "34%", "thời gian Downpour dành cho truyền thông ở k = 8: server là nút thắt", big_size=30, h=1.45)
 
     # 14. Đồng bộ vs bất đồng bộ (biểu đồ native)
-    s = content_slide(prs, "§5.2: so ở cùng độ chính xác, đồng bộ thắng bất đồng bộ",
-                      "Cấu hình D, đo thời gian tới cùng ngưỡng validation 85%, 5 seed, learning rate chọn riêng. Bất đồng bộ nhanh hơn "
-                      "mỗi epoch nhưng cần nhiều epoch hơn. Đồng bộ nhanh hơn 1,46× (không momentum) và 3,31× (momentum 0,9). "
-                      "Bảng phải: gradient trễ d bước với bước η, tích d·η càng lớn càng dễ không học được.")
+    s = content_slide(prs, "§5.2: bất đồng bộ nhanh hơn mỗi epoch nhưng kém hiệu quả hơn",
+                      "Cấu hình D, một máy, 5 seed, learning rate chọn riêng cho từng biến thể. Bất đồng bộ nhanh hơn mỗi epoch khoảng "
+                      "15–20% (0,51 so với 0,59 giây) vì không phải chờ nhau, nhưng gradient đến server đã cũ nên cần 14–16 epoch để đạt "
+                      "validation 85%, so với 5–9 epoch của đồng bộ. Vì vậy tính đến cùng độ chính xác, đồng bộ xong sớm hơn 1,46× "
+                      "(không momentum) và 3,31× (momentum 0,9). Bảng phải: gradient trễ d bước với bước η, tích d·η càng lớn càng dễ "
+                      "không học được. Trên nhiều máy với mạng chậm, kết quả có thể khác; chưa đo.")
     cd = CategoryChartData()
     cats = ["C tuần tự", "MPI đồng bộ, m = 0,9", "MPI đồng bộ, m = 0", "MPI trung bình tham số", "MPI bất đồng bộ, m = 0", "MPI bất đồng bộ, m = 0,9"]
     vals = [7.74, 2.73, 5.15, 4.09, 7.38, 9.08]
@@ -922,7 +904,8 @@ def build(template, out):
     va.has_major_gridlines = False
     va.maximum_scale = 11
     va.minimum_scale = 0
-    caption(s, 0.4, 5.65, 5.6, "CUDA 1 GPU: 0,24 s (32,9×), không vẽ để giữ thang đo. Cấu hình D, 5 seed.", size=12)
+    caption(s, 0.4, 5.65, 5.6, "CUDA 1 GPU: 0,24 s (32,9×), không vẽ để giữ thang đo. Cấu hình D, 5 seed, đo trên một máy. "
+            "Bảng nhỏ bên phải: trung vị, khoảng là hai mức momentum.", size=12)
     text(s, 6.25, 1.0, 3.35, 0.4, [P(R("Gradient trễ d bước, bước η", size=15, bold=True, color=DARKRED, font=TITLE_FONT))])
     table(s, 6.25, 1.45, 3.35, [
         ["d", "η", "d·η", "Học được"],
@@ -932,11 +915,16 @@ def build(template, out):
         ["11", "0,05", "0,55", "4/10"],
         ["3", "0,20", "0,60", "0/10"],
     ], col_w=[0.55, 0.75, 0.75, 1.3], font=12, header_font=12, row_h=0.38, name="Bảng gradient trễ")
-    text(s, 6.25, 3.85, 3.35, 2.4, [
+    text(s, 6.25, 3.85, 3.35, 1.65, [
         P(R("d·η càng lớn càng dễ hỏng, nhưng không có ngưỡng sắc", size=14), bullet=True, after=6),
-        P(R("Trễ lớn vẫn học được nếu bước nhỏ và đủ epoch", size=14), bullet=True, after=6),
-        P(R("⇒ bất đồng bộ cần nhiều epoch hơn", size=14, bold=True, color=DARKRED), bullet=True),
+        P(R("Trễ lớn phải dùng bước nhỏ, nên cần nhiều epoch", size=14), bullet=True, after=6),
+        P(R("⇒ Nhanh hơn mỗi epoch, nhưng cần nhiều epoch hơn", size=14, bold=True, color=DARKRED), bullet=True),
     ])
+    table(s, 6.25, 5.62, 3.35, [
+        ["", "s/epoch", "Epoch tới 85%"],
+        ["Đồng bộ", "0,59", "5–9"],
+        ["Bất đồng bộ", "0,51", "14–16"],
+    ], col_w=[1.2, 0.8, 1.35], font=12, header_font=12, row_h=0.27, bold_first_col=True, name="Bảng mỗi epoch và số epoch")
 
     # 15. Truyền thông đa GPU
     s = content_slide(prs, "§5: truyền thông quyết định có nên thêm GPU",
@@ -1005,7 +993,7 @@ def build(template, out):
         ["§5 Allreduce gom-rồi-phát", "Đúng dạng chi phí; ring tốt hơn khi gradient lớn", [part]],
         ["§5.1.1 Parallel SGD cần trộn dữ liệu", "77,7% → 97,9% nhờ ShuffleSGD", [ok]],
         ["§5.1.2 ADMM tránh trộn dữ liệu", "Tốt hơn PSGD mỗi epoch, kém ShuffleSGD", [part]],
-        ["§5.2 Bất đồng bộ nhanh hơn", "Chậm hơn 1,46–3,31× khi so ở cùng độ chính xác", [no]],
+        ["§5.2 Bất đồng bộ nhanh hơn", "Chậm hơn 1,46–3,31× khi so ở cùng độ chính xác", [part]],
     ], col_w=[3.35, 4.35, 1.5], font=13, header_font=13, row_h=0.43, name="Bảng đối chiếu")
     caption(s, 0.4, 6.05, 9.2, "Chưa kiểm chứng: Downpour không còn tăng tốc khi số worker vượt T/τ.", size=13)
 
