@@ -482,7 +482,7 @@ theo số micro-batch, đường chấm là trần bong bóng `S·M/(M+S−1)`. 
 | §5: allreduce gom-rồi-phát, chi phí `O(L·k) + O(k·p/B)` | Đo được cả hai số hạng; nhưng ring tốt hơn tree với gradient lớn, tree mất băng thông khi k tăng | **Đúng về dạng; thuật toán của bài không tối ưu** |
 | §5.1.1: Parallel SGD cần trộn dữ liệu; ShuffleSGD khắc phục | 77,7% → 97,9% (đợt 1); 94,6% → 99,0% (đợt 2) | **Xác nhận**; lấy trung bình thường xuyên cũng khắc phục được |
 | §5.1.2: ADMM tránh được việc trộn dữ liệu | Tốt hơn Parallel SGD mỗi epoch nhưng kém ShuffleSGD, xấu đi khi k tăng | **Một phần** |
-| §5.2: bất đồng bộ bỏ chờ để tăng tốc | Nhanh hơn mỗi epoch, nhưng tới cùng độ chính xác chậm hơn đồng bộ 1,46–3,31×; Downpour bị server giới hạn | **Không đúng khi so ở cùng độ chính xác** |
+| §5.2: bất đồng bộ bỏ chờ để tăng tốc | Nhanh hơn mỗi epoch (0,51 so với 0,59 s), nhưng cần 14–16 epoch thay vì 5–9 nên tới cùng độ chính xác chậm hơn đồng bộ 1,46–3,31×; Downpour bị server giới hạn | **Một phần**: đúng theo từng epoch, không đúng khi so ở cùng độ chính xác |
 | §5.2: Downpour không tăng tốc khi số worker vượt `T/τ` | Chưa đo | Chưa kiểm chứng |
 
 Bài báo đo §3 bằng Caffe trên một máy năm 2016 và chỉ phân tích §5 bằng O(·). Kiểm chứng bằng số đo cho thấy hai điều bài chưa nêu:
