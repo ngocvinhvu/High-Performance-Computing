@@ -442,41 +442,21 @@ def build(template, out):
     ], col_w=[0.4, 5.2, 3.6], font=13, header_font=13, row_h=0.42, bold_first_col=True, name="Bảng dữ liệu")
     caption(s, 0.4, 6.05, 9.2, "Bài báo gốc: ảnh xám 224×224 thuộc 40 lớp, không nêu tên bộ dữ liệu.", size=12)
 
-    # 6. Mô hình toán
-    s = content_slide(prs, "Mô hình toán",
-                      "Trái: vì sao Sync SGD phải cho đúng kết quả tuần tự, và vì sao conv tuyến tính theo batch còn FC "
-                      "bị giới hạn bởi băng thông. Phải: mô hình chi phí α–β. Điều kiện để thêm GPU có lợi và trần bong bóng "
-                      "của pipeline là hai công thức sẽ dùng để đọc kết quả.")
-    box(s, 0.4, 1.05, 4.45, 5.65)
-    text(s, 0.55, 1.15, 4.15, 5.5, [
-        P(R("SGD và tính tương đương", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
-        P(R("w ← w − α · (1/m) Σ ∇Lᵢ(w)", size=15, bold=True), after=4),
-        P(R("Chia batch cho k tiến trình: (1/k) Σ gᵣ = ∇L", size=14), bullet=True),
-        P(R("⇒ Sync SGD bằng đúng SGD tuần tự, chỉ khác thứ tự cộng số thực", size=14), bullet=True, after=10),
-        P(R("Conv quy về nhân ma trận", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
-        P(R("im2col: (96×121)·(121×2916) ≈ 67,7 MFLOP/ảnh", size=14), bullet=True),
-        P(R("t(B) = a + b·B: tuyến tính theo batch", size=14), bullet=True, after=10),
-        P(R("FC là nhân ma trận–vector", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
-        P(R("2n² FLOP nhưng đọc 4n² byte ⇒ t(n) ≈ 4n²/BW", size=14), bullet=True),
-        P(R("Tỉ lệ CPU/GPU ≈ tỉ lệ băng thông bộ nhớ", size=14), bullet=True),
-    ])
-    text(s, 5.1, 1.1, 4.5, 0.4, [P(R("Chi phí allreduce n byte trên k máy", size=16, bold=True, color=DARKRED, font=TITLE_FONT))])
-    table(s, 5.1, 1.55, 4.5, [
-        ["Thuật toán", "Thời gian"],
-        ["tree nhị thức (BitTorrent, bài báo)", "2·log₂k·(α + nβ)"],
-        ["gom phẳng về driver (tree phẳng)", "2(k−1)·(α + nβ)"],
-        ["recursive doubling", "log₂k·(α + nβ)"],
-        ["ring", "2(k−1)·α + 2(k−1)/k·nβ"],
-    ], col_w=[2.3, 2.2], font=12, header_font=13, row_h=0.38, name="Bảng alpha-beta")
-    text(s, 5.1, 3.75, 4.5, 2.95, [
-        P(R("Thông điệp nhỏ: ít bước thắng. Thông điệp lớn: ring thắng.", size=14), after=10),
-        P(R("Khi nào thêm GPU có lợi", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
-        P(R("T_c(B)·(1 − 1/k) > T_ar(p)", size=15, bold=True), after=2),
-        P(R("T_ar không đổi theo batch ⇒ mô hình nhỏ cần batch lớn", size=14), after=10),
-        P(R("Pipeline S stage, M micro-batch", size=16, bold=True, color=DARKRED, font=TITLE_FONT), after=4),
-        P(R("Trần tăng tốc S·M / (M + S − 1)", size=15, bold=True), after=2),
-        P(R("M = 1 ⇒ trần bằng 1: chia mô hình thuần túy không nhanh hơn", size=14)),
-    ])
+    # 6. Mô hình toán (chỉ tên công thức và ứng dụng; công thức chi tiết ở mục 2 của báo cáo)
+    s = content_slide(prs, "Mô hình toán: sáu công thức dùng để đọc kết quả",
+                      "Không trình bày phương trình, chỉ nêu mỗi mô hình dùng để làm gì. Công thức đầy đủ nằm ở mục 2 của báo cáo. "
+                      "Mô hình đầu nói kết quả phải đúng thế nào, năm mô hình sau nói chương trình nhanh đến đâu và vì sao.")
+    table(s, 0.4, 1.05, 9.2, [
+        ["Công thức / mô hình", "Ứng dụng trong bài", "Dùng ở"],
+        ["Tương đương của Sync SGD", "Chia batch cho k máy rồi lấy trung bình gradient cho đúng kết quả SGD tuần tự: căn cứ để kiểm tra bản song song", "Kiểm tra đúng đắn"],
+        ["im2col + GEMM", "Đưa conv về nhân ma trận: giải thích vì sao GEMM là phần nặng nhất và conv tuyến tính theo batch", "§3, §3.1"],
+        ["Giới hạn băng thông bộ nhớ", "Lớp FC đọc nhiều hơn tính: tỉ lệ GPU/CPU phụ thuộc băng thông, ma trận nhỏ GPU có thể thua", "§3"],
+        ["Mô hình chi phí α–β (Hockney)", "So sánh các thuật toán allreduce (tree, tree phẳng, recursive doubling, ring) và chọn theo kích thước thông điệp", "§5, đa GPU"],
+        ["Điều kiện thêm GPU có lợi", "Phần tính tiết kiệm được phải lớn hơn thời gian allreduce: mô hình nhỏ cần batch lớn", "§5, đa GPU"],
+        ["Trần tăng tốc pipeline (bong bóng)", "Chia mô hình mà không chia micro-batch thì không nhanh hơn: chỉ để vừa bộ nhớ", "§2"],
+    ], col_w=[2.75, 5.0, 1.45], font=13, header_font=13, row_h=0.62, bold_first_col=True, name="Bảng mô hình toán")
+    caption(s, 0.4, 5.55, 9.2, "Dòng đầu: kết quả phải đúng thế nào. Năm dòng sau: nhanh đến đâu và vì sao. "
+            "Phương trình đầy đủ ở mục 2 của báo cáo.", size=13)
 
     # 7. Section II
     section_slide(prs, "II.", "THIẾT KẾ, MÃ NGUỒN VÀ PHƯƠNG PHÁP ĐO")
