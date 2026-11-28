@@ -851,8 +851,8 @@ def build(template, out):
         ["ADMM", "99,1%", "96,9%", "3,33×"],
         ["Downpour", "98,9%", "97,3%", "2,48×"],
     ], col_w=[2.55, 0.9, 1.05, 0.9], font=12, header_font=12, row_h=0.4, name="Bảng phương pháp")
-    caption(s, 0.4, 5.95, 5.4, "Cấu hình C đợt 2, 10 epoch, trung bình 2 seed.")
-    stat(s, 6.05, 1.05, 3.55, "77,7% → 97,9%", "Parallel SGD với dữ liệu không IID, trước và sau ShuffleSGD (3 epoch)", big_size=26, h=1.6)
+    caption(s, 0.4, 5.95, 5.4, "Bảng: cấu hình C đợt 2, 10 epoch, trung bình 2 seed.")
+    stat(s, 6.05, 1.05, 3.55, "77,7% → 97,9%", "Parallel SGD với dữ liệu không IID, trước và sau ShuffleSGD (đợt 1, 3 epoch)", big_size=26, h=1.6)
     stat(s, 6.05, 2.85, 3.55, "87,4%", "ADMM, dữ liệu không IID, k = 8: xấu đi khi k tăng", big_size=30, h=1.45)
     stat(s, 6.05, 4.5, 3.55, "34%", "thời gian Downpour dành cho truyền thông ở k = 8: server là nút thắt", big_size=30, h=1.45)
 
@@ -991,7 +991,7 @@ def build(template, out):
         ["§3 GPU nhanh hơn ≈ 40×", "2,4× (M620) đến 56×; < 1× với ma trận nhỏ", [part]],
         ["§3 FC O(n²), speedup tăng theo n", "Đúng; giới hạn bởi băng thông bộ nhớ", [ok]],
         ["§5 Allreduce gom-rồi-phát", "Đúng dạng chi phí; ring tốt hơn khi gradient lớn", [part]],
-        ["§5.1.1 Parallel SGD cần trộn dữ liệu", "77,7% → 97,9% nhờ ShuffleSGD", [ok]],
+        ["§5.1.1 Parallel SGD cần trộn dữ liệu", "Nhờ ShuffleSGD: 77,7% → 97,9% (đợt 1), 94,6% → 99,0% (đợt 2)", [ok]],
         ["§5.1.2 ADMM tránh trộn dữ liệu", "Tốt hơn PSGD mỗi epoch, kém ShuffleSGD", [part]],
         ["§5.2 Bất đồng bộ nhanh hơn", "Chậm hơn 1,46–3,31× khi so ở cùng độ chính xác", [part]],
     ], col_w=[3.35, 4.35, 1.5], font=13, header_font=13, row_h=0.43, name="Bảng đối chiếu")
